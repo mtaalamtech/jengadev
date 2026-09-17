@@ -1,0 +1,30 @@
+# Runtime data and installed binaries - not source, and some of this is
+# multi-hundred-MB third-party binaries that get downloaded/extracted at
+# install time, not committed to the repo.
+/bin/
+/data/
+/www/
+/config/
+/offline_packages/
+/scratch/
+node_modules/
+
+# Build output
+*.exe
+*.exe.bak
+JengaDev_New.exe
+
+# Generated at runtime - regenerated from code on first launch, and
+# jengadev.json in particular can carry locally-set passwords/tokens.
+/Caddyfile
+/jengadev.json
+
+# Local dev scratch files, not part of the shipped product
+test_*.js
+test_*.ps1
+test_*.txt
+PORTFOLIO-*.md
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db

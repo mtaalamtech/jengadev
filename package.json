@@ -1,0 +1,30 @@
+{
+  "name": "jengadev",
+  "version": "1.0.24",
+  "description": "Portable Windows dev server - Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS.",
+  "main": "daemon/index.js",
+  "scripts": {
+    "start": "node daemon/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mtaalamtech/jengadev.git"
+  },
+  "keywords": ["dev-server", "local-development", "php", "caddy", "windows"],
+  "author": "Core Mtaalam Technologies (https://mtaalamtech.com)",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "body-parser": "^2.3.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jimp": "^1.6.1",
+    "mysql2": "^3.23.1",
+    "node-forge": "^1.4.0",
+    "pg": "^8.22.0",
+    "pidusage": "^4.0.1",
+    "sharp": "^0.35.3"
+  }
+}

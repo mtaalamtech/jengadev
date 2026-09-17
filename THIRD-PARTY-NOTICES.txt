@@ -1,0 +1,209 @@
+JengaDev - Third-Party Notices
+==============================
+
+JengaDev bundles, and in some cases downloads on demand, the third-party
+software listed below. This file identifies each component actually used
+by JengaDev, its license, and where to find its full license text and
+source code. Nothing here changes JengaDev's own licensing terms - it is
+provided solely to satisfy the attribution/notice terms of the components
+listed.
+
+Generated for JengaDev v1.0.24. If you add, remove, or upgrade a bundled
+component or a daemon dependency, regenerate this file.
+
+
+================================================================================
+PART 1 - BUNDLED SERVER COMPONENTS
+================================================================================
+
+Caddy 2.11.4
+    https://caddyserver.com  /  https://github.com/caddyserver/caddy
+    License: Apache License, Version 2.0
+    Copyright (c) The Caddy Authors.
+    Used unmodified as bin\caddy.exe to serve hosted sites and provide
+    automatic local HTTPS.
+
+PHP 8.3.32
+    https://www.php.net
+    License: The PHP License, version 3.01
+    Copyright (c) 1999-2024 The PHP Group. All rights reserved.
+    Full license text bundled at bin\<php-version>\license.txt.
+    Used unmodified to run hosted PHP sites via php-cgi.exe (FastCGI).
+
+MariaDB Server 12.3.2 (Community Server)
+    https://mariadb.org  /  https://github.com/MariaDB/server
+    License: GNU General Public License, version 2 (GPLv2)
+    Copyright (c) MariaDB Foundation and the MariaDB/MySQL contributors.
+    Full license text bundled at bin\mysql\COPYING.
+    Used unmodified as the bundled MySQL-compatible database server.
+    Corresponding source code is available from mariadb.org / the GitHub
+    repository above; JengaDev makes no modifications to MariaDB itself.
+
+PostgreSQL 16.2
+    https://www.postgresql.org
+    License: The PostgreSQL License (a permissive, OSI-approved license in
+    the same family as the MIT/BSD licenses)
+    Copyright (c) 1996-2024, PostgreSQL Global Development Group.
+    Copyright (c) 1994, The Regents of the University of California.
+    Full license text bundled at bin\pgsql\server_license.txt (see also
+    bin\pgsql\commandlinetools_3rd_party_licenses.txt for PostgreSQL's own
+    bundled third-party components).
+    Used unmodified as the bundled PostgreSQL database server.
+
+phpMyAdmin 5.2.1
+    https://www.phpmyadmin.net  /  https://github.com/phpmyadmin/phpmyadmin
+    License: GNU General Public License, version 2 (GPLv2)
+    Copyright (c) The phpMyAdmin contributors.
+    Used unmodified, offered as an optional MySQL/MariaDB web administration
+    tool. Corresponding source code is available from the project links above.
+
+Adminer 5.5.1
+    https://www.adminer.org  /  https://github.com/vrana/adminer
+    License: Apache License, Version 2.0 (Adminer is dual-licensed under
+    Apache-2.0 or GPLv2, at the licensee's choice; JengaDev uses it under
+    the Apache-2.0 option)
+    Copyright (c) Jakub Vrana and contributors.
+    Used unmodified, offered as an optional lightweight database
+    administration tool.
+
+Mailpit (latest release fetched from GitHub at install time)
+    https://github.com/axllent/mailpit
+    License: MIT License
+    Copyright (c) 2022-Now() Ralph Slooten.
+    Full license text bundled at bin\mailpit\LICENSE.
+    Used unmodified as the bundled outgoing-mail testing server/viewer.
+
+Node.js 20.11.1
+    https://nodejs.org
+    License: MIT License (Node.js core); Node.js also bundles other
+    third-party components under their own licenses - see
+    https://github.com/nodejs/node/blob/main/LICENSE for the full set.
+    Copyright Node.js contributors.
+    Bundled at bin\node\node.exe solely to run the PostgreSQL supervisor
+    script (daemon\postgres-wrapper.js) as a real Node binary, since the
+    packaged JengaDev.exe itself cannot run arbitrary scripts.
+
+
+================================================================================
+PART 2 - NPM PACKAGES USED BY THE JENGADEV DAEMON
+================================================================================
+
+The JengaDev daemon (compiled into JengaDev.exe) is built with Node.js and
+Express, and uses the packages below (direct dependencies and everything
+they in turn depend on). All are permissively licensed (MIT, ISC,
+Apache-2.0, or BSD-3-Clause); full license text for each is available in
+its own package repository / npm registry entry and is not reproduced
+individually here for brevity - none of these licenses require anything
+beyond retaining copyright and license notices, which this document does.
+
+    accepts@2.0.0 - MIT
+    adm-zip@0.6.0 - MIT
+    aws-ssl-profiles@1.1.2 - MIT
+    body-parser@2.3.0 - MIT
+    bytes@3.1.2 - MIT
+    call-bind-apply-helpers@1.0.2 - MIT
+    call-bound@1.0.4 - MIT
+    content-disposition@1.1.0 - MIT
+    content-type@2.0.0 - MIT
+    cookie@0.7.2 - MIT
+    cookie-signature@1.2.2 - MIT
+    cors@2.8.6 - MIT
+    debug@4.4.3 - MIT
+    denque@2.1.0 - Apache-2.0
+    depd@2.0.0 - MIT
+    dunder-proto@1.0.1 - MIT
+    ee-first@1.1.1 - MIT
+    encodeurl@2.0.0 - MIT
+    es-define-property@1.0.1 - MIT
+    es-errors@1.3.0 - MIT
+    es-object-atoms@1.1.2 - MIT
+    escape-html@1.0.3 - MIT
+    etag@1.8.1 - MIT
+    express@5.2.1 - MIT
+    finalhandler@2.1.1 - MIT
+    forwarded@0.2.0 - MIT
+    fresh@2.0.0 - MIT
+    function-bind@1.1.2 - MIT
+    generate-function@2.3.1 - MIT
+    get-intrinsic@1.3.0 - MIT
+    get-proto@1.0.1 - MIT
+    gopd@1.2.0 - MIT
+    has-symbols@1.1.0 - MIT
+    hasown@2.0.4 - MIT
+    http-errors@2.0.1 - MIT
+    iconv-lite@0.7.3 - MIT
+    inherits@2.0.4 - ISC
+    ipaddr.js@1.9.1 - MIT
+    is-promise@4.0.0 - MIT
+    is-property@1.0.2 - MIT
+    long@5.3.2 - Apache-2.0
+    lru.min@1.1.4 - MIT
+    math-intrinsics@1.1.0 - MIT
+    media-typer@1.1.0 - MIT
+    merge-descriptors@2.0.0 - MIT
+    mime-db@1.54.0 - MIT
+    mime-types@3.0.2 - MIT
+    ms@2.1.3 - MIT
+    mysql2@3.23.1 - MIT
+    named-placeholders@1.1.6 - MIT
+    negotiator@1.0.0 - MIT
+    node-forge@1.4.0 - BSD-3-Clause (dual-licensed as BSD-3-Clause OR
+        GPL-2.0-only; JengaDev uses it under the BSD-3-Clause option)
+    object-assign@4.1.1 - MIT
+    object-inspect@1.13.4 - MIT
+    on-finished@2.4.1 - MIT
+    once@1.4.0 - ISC
+    parseurl@1.3.3 - MIT
+    path-to-regexp@8.4.2 - MIT
+    pg@8.22.0 - MIT
+    pg-connection-string@2.14.0 - MIT
+    pg-int8@1.0.1 - ISC
+    pg-pool@3.14.0 - MIT
+    pg-protocol@1.15.0 - MIT
+    pg-types@2.2.0 - MIT
+    pgpass@1.0.5 - MIT
+    pidusage@4.0.1 - MIT
+    postgres-array@2.0.0 - MIT
+    postgres-bytea@1.0.1 - MIT
+    postgres-date@1.0.7 - MIT
+    postgres-interval@1.2.0 - MIT
+    proxy-addr@2.0.7 - MIT
+    qs@6.15.3 - BSD-3-Clause
+    range-parser@1.3.0 - MIT
+    raw-body@3.0.2 - MIT
+    router@2.2.0 - MIT
+    safe-buffer@5.2.1 - MIT
+    safer-buffer@2.1.2 - MIT
+    send@1.2.1 - MIT
+    serve-static@2.2.1 - MIT
+    setprototypeof@1.2.0 - ISC
+    side-channel@1.1.1 - MIT
+    side-channel-list@1.0.1 - MIT
+    side-channel-map@1.0.1 - MIT
+    side-channel-weakmap@1.0.2 - MIT
+    split2@4.2.0 - ISC
+    sql-escaper@1.5.1 - MIT
+    statuses@2.0.2 - MIT
+    toidentifier@1.0.1 - MIT
+    type-is@2.1.0 - MIT
+    unpipe@1.0.0 - MIT
+    vary@1.1.2 - MIT
+    wrappy@1.0.2 - ISC
+    xtend@4.0.2 - MIT
+
+Note: package.json also lists "jimp" and "sharp" as dependencies, but
+neither is ever require()'d by the daemon - they are not reachable code and
+are not bundled into JengaDev.exe, so they (and sharp's LGPL-licensed
+libvips binaries) are intentionally omitted above as not actually
+distributed. If that ever changes, this file needs updating to include them
+and their own notices (sharp bundles LGPL-3.0-or-later components).
+
+
+================================================================================
+HOW TO GET SOURCE CODE
+================================================================================
+
+GPLv2-licensed components above (MariaDB Server, phpMyAdmin) are
+distributed unmodified; their corresponding source code is available
+directly from the project links listed under each entry. JengaDev does not
+modify any of the third-party components listed in this file.

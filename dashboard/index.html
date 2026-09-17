@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JengaDev Dashboard</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Toolbar -->
+        <header class="toolbar">
+            <div class="toolbar-left">
+                <div class="logo"><img src="logo.png" alt="JengaDev" style="height: 35px; vertical-align: middle; margin-right: 10px;"> <div style="display:inline-flex; flex-direction:column; line-height:1;"><span style="font-weight:700;">JengaDev</span><span style="font-size:0.6em; font-weight:400; color:#9ca3af; margin-top:2px;"><a href="https://mtaalamtech.com" target="_blank" style="color:inherit; text-decoration:none;">by Core Mtaalam Technologies</a></span></div></div>
+            </div>
+            <div class="toolbar-center">
+                <div class="global-status-indicators">
+                    <div class="indicator" id="ind-caddy" title="Caddy"><span class="dot"></span> Caddy</div>
+                    <div class="indicator" id="ind-php" title="PHP"><span class="dot"></span> PHP</div>
+                    <div class="indicator" id="ind-mysql" title="MySQL"><span class="dot"></span> MySQL</div>
+                    <div class="indicator" id="ind-postgres" title="PostgreSQL"><span class="dot"></span> Postgres</div>
+                    <div class="indicator" id="ind-mailpit" title="Mailpit"><span class="dot"></span> Mailpit</div>
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <div class="header-links" style="display: flex; gap: 15px; margin-right: 20px; align-items: center;">
+                    <a id="top-btn-phpmyadmin" href="http://phpmyadmin.jengadev" target="_blank" class="btn" style="display: none; background: #3b82f6; color: white;"><i class="fas fa-database"></i> phpMyAdmin</a>
+                    <a id="top-btn-adminer" href="#" onclick="openAdminer(); return false;" class="btn" style="display: none; background: #10b981; color: white;"><i class="fas fa-server"></i> Adminer</a>
+                </div>
+                <button class="btn btn-secondary" id="btn-stop-all">Stop All</button>
+                <button class="btn btn-primary" id="btn-start-all">Start All</button>
+            </div>
+        </header>
+        
+        <div id="global-alerts" style="background: rgba(239, 68, 68, 0.1); border-bottom: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 10px 24px; display: none; align-items: center; justify-content: space-between; font-size: 0.9rem;">
+            <div><i class="fas fa-exclamation-triangle"></i> <span id="global-alerts-text"></span></div>
+            <button class="btn btn-icon" onclick="document.getElementById('global-alerts').style.display='none'">&times;</button>
+        </div>
+
+        <div id="update-banner" style="background: rgba(59, 130, 246, 0.12); border-bottom: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; padding: 10px 24px; display: none; align-items: center; justify-content: space-between; font-size: 0.9rem;">
+            <div><i class="fas fa-arrow-circle-up"></i> <span id="update-banner-text"></span></div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button class="btn btn-primary" id="btn-apply-update" style="padding:4px 12px; font-size:0.85rem;">Download & Install</button>
+                <button class="btn btn-icon" onclick="document.getElementById('update-banner').style.display='none'">&times;</button>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <div class="nav-item active" data-tab="overview">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        Overview
+                    </div>
+                    <div class="nav-item" data-tab="hosts">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        Hosts
+                    </div>
+                    
+                    <div class="nav-section-title">Servers</div>
+                    <div class="nav-item" data-tab="caddy">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Web Server
+                        <label class="switch"><input type="checkbox" id="toggle-sidebar-caddy"><span class="slider"></span></label>
+                    </div>
+                    <div class="nav-item" data-tab="php">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg> PHP
+                        <label class="switch"><input type="checkbox" id="toggle-sidebar-php"><span class="slider"></span></label>
+                    </div>
+                    <div class="nav-item" data-tab="mysql">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> MySQL
+                        <label class="switch"><input type="checkbox" id="toggle-sidebar-mysql"><span class="slider"></span></label>
+                    </div>
+                    <div class="nav-item" data-tab="postgres">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg> PostgreSQL
+                        <label class="switch"><input type="checkbox" id="toggle-sidebar-postgres"><span class="slider"></span></label>
+                    </div>
+                    <div class="nav-item" data-tab="mailpit">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Mailpit
+                        <label class="switch"><input type="checkbox" id="toggle-sidebar-mailpit"><span class="slider"></span></label>
+                    </div>
+                    <div class="nav-item" data-tab="ssl">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:10px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> SSL Tools
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="content-area">
+                <!-- Overview Tab -->
+                <div class="tab-pane active" id="pane-overview">
+                    <div class="pane-header">
+                        <h2>Overview</h2>
+                        <p>Real-time system logs and status.</p>
+                    </div>
+                    
+                    <div class="performance-section" style="margin-bottom: 20px; display: flex; gap: 20px;">
+                        <div class="settings-card" style="flex: 1; padding: 15px;">
+                            <h3 style="margin-top:0; margin-bottom: 15px; font-size:1.1rem; border-bottom:1px solid var(--border); padding-bottom:10px;">Performance</h3>
+                            
+                            <div class="perf-row" style="margin-bottom:10px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>Caddy</span>
+                                    <span id="perf-caddy" style="color:var(--text-muted); font-size:0.9rem;">Offline</span>
+                                </div>
+                                <div class="progress-bar" style="height:6px; background:var(--surface-hover); border-radius:3px; overflow:hidden;">
+                                    <div id="perf-caddy-bar" style="height:100%; width:0%; background:var(--accent); transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="perf-row" style="margin-bottom:10px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>PHP-FPM</span>
+                                    <span id="perf-php" style="color:var(--text-muted); font-size:0.9rem;">Offline</span>
+                                </div>
+                                <div class="progress-bar" style="height:6px; background:var(--surface-hover); border-radius:3px; overflow:hidden;">
+                                    <div id="perf-php-bar" style="height:100%; width:0%; background:#777bb3; transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="perf-row">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>MariaDB</span>
+                                    <span id="perf-mysql" style="color:var(--text-muted); font-size:0.9rem;">Offline</span>
+                                </div>
+                                <div class="progress-bar" style="height:6px; background:var(--surface-hover); border-radius:3px; overflow:hidden;">
+                                    <div id="perf-mysql-bar" style="height:100%; width:0%; background:#e48e00; transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="perf-row" style="margin-top:10px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>PostgreSQL</span>
+                                    <span id="perf-postgres" style="color:var(--text-muted); font-size:0.9rem;">Offline</span>
+                                </div>
+                                <div class="progress-bar" style="height:6px; background:var(--surface-hover); border-radius:3px; overflow:hidden;">
+                                    <div id="perf-postgres-bar" style="height:100%; width:0%; background:#336791; transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="perf-row" style="margin-top:10px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span>Mailpit</span>
+                                    <span id="perf-mailpit" style="color:var(--text-muted); font-size:0.9rem;">Offline</span>
+                                </div>
+                                <div class="progress-bar" style="height:6px; background:var(--surface-hover); border-radius:3px; overflow:hidden;">
+                                    <div id="perf-mailpit-bar" style="height:100%; width:0%; background:#ef4444; transition:width 0.3s;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="terminal-section">
+                        <div class="terminal-header">
+                            <h3>Combined Logs</h3>
+                            <button class="btn btn-icon" onclick="clearLogs()" title="Clear logs">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                        <div class="terminal-body" id="terminal-output">
+                            <div class="log-line info"><span class="time">[System]</span> Welcome to JengaDev by Core Mtaalam Technologies.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hosts Tab (Master-Detail) -->
+                <div class="tab-pane" id="pane-hosts">
+                    <div class="pane-header flex-between">
+                        <div>
+                            <h2>Virtual Hosts</h2>
+                            <p>Manage your local development domains.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="split-pane">
+                        <div class="split-master">
+                            <div class="master-header">
+                                <span>Hosts</span>
+                                <button class="btn btn-icon" onclick="showNewHostModal()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+                            </div>
+                            <div class="master-list" id="hosts-master-list">
+                                <div style="padding:20px;text-align:center;color:var(--text-muted)">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="split-detail" id="host-detail-view" style="display:none;">
+                            <h3 id="detail-host-name" style="margin-bottom: 20px; font-size:1.4rem;">Host Name</h3>
+                            <div class="setting-row">
+                                <label>Domain</label>
+                                <span><a href="#" id="detail-host-url" target="_blank" style="color:var(--accent);text-decoration:none;">http://name.test</a></span>
+                            </div>
+                            <div class="setting-row">
+                                <label>Document Root</label>
+                                <span id="detail-host-path">C:/path</span>
+                            </div>
+                            <div class="setting-row">
+                                <label>Size</label>
+                                <span id="detail-host-size" style="font-weight: 500;">0 MB</span>
+                            </div>
+                            <div class="setting-row">
+                                <label>Technology Stack</label>
+                                <span id="detail-host-stack" style="display: flex; gap: 5px;"></span>
+                            </div>
+                            <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                                <div style="display:flex; justify-content: space-between; width: 100%;">
+                                    <label>SQLite Databases</label>
+                                    <button class="btn btn-secondary" onclick="promptCreateSqlite()" style="padding: 4px 10px; font-size: 0.85rem;">+ New DB</button>
+                                </div>
+                                <div id="detail-host-sqlite-list" style="width:100%; display: flex; flex-direction: column; gap: 5px;">
+                                    <span style="color:var(--text-muted);">None found.</span>
+                                </div>
+                            </div>
+                            <div style="margin-top:20px; display:flex; gap:10px;">
+                                <button class="btn btn-secondary" onclick="window.open(document.getElementById('detail-host-url').href, '_blank')">Open in Browser</button>
+                                <button class="btn btn-secondary" onclick="openInExplorer()">Open in Explorer</button>
+                                <select id="open-with-editor" class="btn btn-secondary" style="background: var(--surface-hover);" onchange="if(this.value) { openEditor(this.value); this.value=''; }">
+                                    <option value="" disabled selected>Open With...</option>
+                                    <option value="code">VS Code</option>
+                                    <option value="cursor">Cursor</option>
+                                    <option value="phpstorm64">PhpStorm</option>
+                                    <option value="subl">Sublime Text</option>
+                                    <option value="other">Other...</option>
+                                </select>
+                                <button class="btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); margin-left: auto;" onclick="deleteHost()">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Caddy Tab -->
+                <div class="tab-pane service-pane" id="pane-caddy" data-service="caddy">
+                    <div class="pane-header flex-between">
+                        <div>
+                            <h2>Caddy Web Server</h2>
+                            <p>Auto-HTTPS & Reverse Proxy</p>
+                        </div>
+                        <div class="flex-actions">
+                            <span class="status-badge status-offline">Offline</span>
+                            <button class="btn btn-primary btn-toggle" onclick="toggleService('caddy')">Start</button>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <h3>Configuration</h3>
+                        <div class="setting-row">
+                            <label>Ports</label>
+                            <span>80, 443</span>
+                        </div>
+                        <div class="setting-row">
+                            <label>Auto HTTPS</label>
+                            <span>Enabled (Local Certs)</span>
+                        </div>
+                        <div class="setting-row">
+                            <label>Config File</label>
+                            <span>Caddyfile</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHP Tab -->
+                <div class="tab-pane service-pane" id="pane-php" data-service="php">
+                    <div class="pane-header flex-between">
+                        <div>
+                            <h2>PHP-FPM</h2>
+                            <p>PHP FastCGI Process Manager</p>
+                        </div>
+                        <div class="flex-actions">
+                            <span class="status-badge status-offline">Offline</span>
+                            <button class="btn btn-primary btn-toggle" onclick="toggleService('php')">Start</button>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <h3>Version Manager</h3>
+                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Select the active PHP version for your servers.</p>
+                        <div style="display:flex; gap:10px;">
+                            <select id="php-version-select" class="select-dropdown" style="flex:1; margin:0;" onchange="switchPhpVersion(this.value)">
+                                <option value="">Loading...</option>
+                            </select>
+                            <button class="btn btn-secondary" onclick="showDownloadPhpModal()">Download New...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-card" style="margin-top:20px;">
+                        <h3>PHP.ini Configuration</h3>
+                        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Change core limits and toggle extensions. Settings auto-apply on save.</p>
+                        
+                        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:250px;">
+                                <div class="setting-row">
+                                    <label>Memory Limit</label>
+                                    <input type="text" id="php-cfg-memory_limit" class="input-text" style="width:100px;">
+                                </div>
+                                <div class="setting-row">
+                                    <label>Max Execution Time (s)</label>
+                                    <input type="text" id="php-cfg-max_execution_time" class="input-text" style="width:100px;">
+                                </div>
+                                <div class="setting-row">
+                                    <label>Upload Max Filesize</label>
+                                    <input type="text" id="php-cfg-upload_max_filesize" class="input-text" style="width:100px;">
+                                </div>
+                                <div class="setting-row">
+                                    <label>Post Max Size</label>
+                                    <input type="text" id="php-cfg-post_max_size" class="input-text" style="width:100px;">
+                                </div>
+                            </div>
+                            
+                            <div style="flex:1; min-width:250px;">
+                                <h3>PHP Extensions</h3>
+                                <div class="form-group search-box" style="margin-bottom: 15px;">
+                                    <input type="text" id="php-ext-search" placeholder="Search extensions..." style="width: 100%; padding: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; border-radius: 4px;">
+                                </div>
+                                <div class="grid-2" id="php-extensions-container" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top:15px; display:flex; justify-content:flex-end;">
+                            <button class="btn btn-primary" style="margin-top:20px;" onclick="savePhpConfig()">Save Configuration & Restart</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MySQL Tab -->
+                <div class="tab-pane service-pane" id="pane-mysql" data-service="mysql">
+                    <div class="pane-header flex-between">
+                        <div>
+                            <h2>MariaDB (MySQL)</h2>
+                            <p>Relational Database Engine</p>
+                        </div>
+                    </div>
+
+                    <div id="mysql-uninstalled-view" style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-muted);">MariaDB is an advanced, drop-in replacement for MySQL.</p>
+                        <button class="btn btn-primary" id="btn-install-mysql" onclick="installMysql()">Download & Install MySQL</button>
+                    </div>
+
+                    <div id="mysql-installed-view" style="display: none;">
+                        <div class="pane-header flex-between" style="border: none; padding-bottom: 0; margin-bottom: 20px;">
+                            <div></div>
+                            <div class="flex-actions">
+                                <span class="status-badge status-offline">Offline</span>
+                                <button class="btn btn-primary btn-toggle" onclick="toggleService('mysql')">Start</button>
+                            </div>
+                        </div>
+
+                        <div class="settings-card" style="margin-top: 20px;">
+                            <h3>my.ini Configuration</h3>
+                            <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Configure MariaDB core settings. The database restarts automatically on save.</p>
+                            
+                            <div class="setting-row">
+                                <label>Port</label>
+                                <input type="text" id="mysql-cfg-port" class="input-text" style="width:120px;">
+                            </div>
+                            <div class="setting-row">
+                                <label>Max Allowed Packet</label>
+                                <input type="text" id="mysql-cfg-max_allowed_packet" class="input-text" style="width:120px;" placeholder="e.g. 16M">
+                            </div>
+                            <div class="setting-row">
+                                <label>InnoDB Buffer Pool Size</label>
+                                <input type="text" id="mysql-cfg-innodb_buffer_pool_size" class="input-text" style="width:120px;" placeholder="e.g. 256M">
+                            </div>
+                            
+                            <div style="margin-top:15px; display:flex; justify-content:flex-end;">
+                                <button class="btn btn-primary" style="margin-top:20px;" onclick="saveMysqlConfig()">Save Configuration & Restart</button>
+                            </div>
+                        </div>
+
+                        <!-- MariaDB / MySQL Users -->
+                        <div class="card" style="margin-top: 30px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Database Users</h3>
+                            </div>
+                            
+                            <!-- Existing Users List -->
+                            <div id="mysql-users-list" class="grid-1" style="margin-top: 15px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Populated dynamically -->
+                            </div>
+
+                            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+                            <h4 style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Add New User</h4>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <input type="text" id="mysql-new-username" placeholder="New Username" class="input-text" style="flex: 1;">
+                                <input type="password" id="mysql-new-password" placeholder="New User's Password" class="input-text" style="flex: 1;">
+                                <button class="btn btn-primary" onclick="createDbUserInline('mysql')">Create User</button>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top: 30px;">
+                            <h3>Database Operations</h3>
+                            <div class="grid-2">
+                                <div class="form-group" style="background: var(--surface-hover); padding: 15px; border-radius: 8px;">
+                                    <label style="font-weight: 600;">Backup Database</label>
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Leave blank to backup all databases</p>
+                                    <input type="text" id="mysql-backup-db" list="mysql-databases-list" placeholder="Search or select database..." class="input-text" style="width: 100%;">
+                                    <button class="btn" style="margin-top:15px; width: 100%; background: #10b981; color: white;" onclick="backupMysql()">Generate Backup (.sql)</button>
+                                </div>
+                                <div class="form-group" style="background: var(--surface-hover); padding: 15px; border-radius: 8px;">
+                                    <label style="font-weight: 600;">Restore Database</label>
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Select target database and backup file</p>
+                                    <input type="text" id="mysql-restore-db" list="mysql-databases-list" placeholder="Target database..." class="input-text" style="width: 100%; margin-bottom: 10px;">
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="mysql-restore-file" class="input-text" placeholder="Absolute path to .sql file" style="flex: 1;">
+                                        <button class="btn btn-secondary" onclick="browseSqlFile()">Browse...</button>
+                                    </div>
+                                    <button class="btn" style="margin-top:15px; width: 100%; background: #f59e0b; color: white;" onclick="restoreMysql()">Restore Backup</button>
+                                </div>
+                            </div>
+                            <datalist id="mysql-databases-list"></datalist>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PostgreSQL Tab -->
+                <div class="tab-pane" id="pane-postgres">
+                    <div class="pane-header">
+                        <h2>PostgreSQL</h2>
+                        <p style="color: var(--text-muted); margin-top: 5px;">Configure and manage your PostgreSQL server.</p>
+                    </div>
+
+                    <div id="postgres-uninstalled-view" style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-muted);">PostgreSQL is an advanced, enterprise-class open source relational database.</p>
+                        <button class="btn btn-primary" id="btn-install-postgres" onclick="installPostgres()">Download & Install PostgreSQL</button>
+                    </div>
+
+                    <div id="postgres-installed-view" style="display: none;">
+                        <div class="grid-2">
+                            <div class="settings-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <h3>PostgreSQL Service</h3>
+                                    <span class="status-badge status-offline" id="badge-postgres">Offline</span>
+                                </div>
+                                <p style="margin-bottom: 15px; color: var(--text-muted);">Start or stop the PostgreSQL database server. By default, it runs on port 5432 with user 'postgres' and no password.</p>
+                                <button class="btn btn-primary btn-toggle" id="btn-postgres-toggle" onclick="performServiceAction('postgres', '/start')" disabled>Start</button>
+                            </div>
+                        </div>
+
+                        <!-- PostgreSQL Users -->
+                        <div class="card" style="margin-top: 30px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Database Users</h3>
+                            </div>
+                            
+                            <!-- Existing Users List -->
+                            <div id="postgres-users-list" class="grid-1" style="margin-top: 15px; margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
+                                <!-- Populated dynamically -->
+                            </div>
+
+                            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+                            <h4 style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Add New User</h4>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <input type="text" id="postgres-new-username" placeholder="New Username" class="input-text" style="flex: 1;">
+                                <input type="password" id="postgres-new-password" placeholder="New User's Password" class="input-text" style="flex: 1;">
+                                <button class="btn btn-primary" onclick="createDbUserInline('postgres')">Create User</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mailpit Tab -->
+                <div class="tab-pane" id="pane-mailpit">
+                    <div class="pane-header">
+                        <h2>Mailpit (SMTP Testing)</h2>
+                        <p style="color: var(--text-muted); margin-top: 5px;">View emails sent to localhost:1025</p>
+                    </div>
+                    
+                    <div id="mailpit-controls" style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-muted);">Mailpit intercepts outbound emails from your apps so you can test them locally.</p>
+                        <button class="btn btn-primary" id="btn-install-mailpit" onclick="installMailpit()">Install & Start Mailpit</button>
+                        <button class="btn btn-primary" id="btn-start-mailpit" style="display: none;" onclick="startService('mailpit')">Start Mailpit</button>
+                        <button class="btn btn-secondary" id="btn-stop-mailpit" style="display: none;" onclick="stopService('mailpit')">Stop Mailpit</button>
+                    </div>
+
+                    <div id="mailpit-settings-container" style="display: none; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">Mailpit Configuration</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>SMTP Port</label>
+                                <input type="number" id="mailpit-smtp-port" placeholder="1025" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Web UI Port</label>
+                                <input type="number" id="mailpit-web-port" placeholder="8025" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Username (Optional)</label>
+                                <input type="text" id="mailpit-user" placeholder="e.g. testuser" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            </div>
+                            <div class="form-group">
+                                <label>SMTP Password (Optional)</label>
+                                <input type="password" id="mailpit-pass" placeholder="e.g. secret" style="width: 100%; padding: 8px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 15px;" onclick="saveMailpitConfig()">Save & Apply</button>
+                    </div>
+
+                    <div id="mailpit-iframe-container" style="display: none; width: 100%; height: 600px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden;">
+                        <div class="card" style="margin-top: 15px; height: 600px; padding: 0;">
+                            <iframe id="mailpit-iframe" src="http://mailpit.jengadev" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SSL Tab -->
+                <div id="pane-ssl" class="tab-pane">
+                    <div class="pane-header">
+                        <h2>SSL Tools</h2>
+                        <p style="font-size: 13px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-top: 5px;">
+                            <strong>How it works:</strong> Generate a CSR &rarr; download and send to your CA (e.g. DigiCert, ZeroSSL) &rarr; upload the signed certificate back &rarr; it will be available for use in Caddy. To renew, click Renew on an active cert &rarr; a fresh CSR is generated with the same domain details.
+                        </p>
+                    </div>
+                    
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(0,0,0,0.2); font-size: 13px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <tr>
+                                    <th style="padding: 15px;">Name</th>
+                                    <th style="padding: 15px;">Common Name</th>
+                                    <th style="padding: 15px;">Type</th>
+                                    <th style="padding: 15px;">Status</th>
+                                    <th style="padding: 15px;">Expires</th>
+                                    <th style="padding: 15px; text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ssl-master-list" style="font-size: 14px;">
+                                <!-- Dynamic SSL Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CSR Modal -->
+    <div id="csr-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Generate CSR</h2>
+                <span class="close" onclick="closeCsrModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="csr-domain">
+                <div class="grid-2">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Common Name (CN)</label>
+                        <input type="text" id="csr-domain-display" disabled style="background: rgba(255,255,255,0.02);">
+                    </div>
+                    <div class="form-group">
+                        <label>Organization</label>
+                        <input type="text" id="csr-org" placeholder="e.g. My Company">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="csr-email" placeholder="admin@domain.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Country (2-letter code)</label>
+                        <input type="text" id="csr-country" placeholder="US" maxlength="2">
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="csr-state" placeholder="California">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>City / Locality</label>
+                        <input type="text" id="csr-locality" placeholder="San Francisco">
+                    </div>
+                </div>
+                
+                <div id="csr-results" style="display:none; margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
+                    <div class="form-group">
+                        <label>Private Key (Automatically Saved)</label>
+                        <textarea id="csr-out-key" rows="4" readonly style="font-family: monospace; font-size:12px;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>CSR (Copy and send to your CA)</label>
+                        <textarea id="csr-out-csr" rows="4" readonly style="font-family: monospace; font-size:12px;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="csr-generate-btn" onclick="submitCsr()">Generate CSR & Private Key</button>
+                <button class="btn" style="background:transparent;" onclick="closeCsrModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Cert Modal -->
+    <div id="upload-cert-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Upload Signed Certificate</h2>
+                <span class="close" onclick="closeUploadModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="upload-domain">
+                <p style="margin-bottom: 15px; color: var(--text-muted);">Paste the CRT contents provided by your CA (including the CA bundle if necessary). The private key is already stored locally.</p>
+                <div class="form-group">
+                    <label>Certificate (.crt / .pem)</label>
+                    <textarea id="upload-cert-text" rows="10" placeholder="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----" style="font-family: monospace; font-size:12px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitUploadCert()">Activate SSL</button>
+                <button class="btn" style="background:transparent;" onclick="closeUploadModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- New Host Modal -->
+    <div id="host-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Virtual Host</h2>
+                <button class="btn btn-icon close-modal" onclick="closeHostModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:10px; color:var(--text-muted);">This will create a new folder in <code>www/</code> and map it to a <code>.test</code> domain.</p>
+                <input type="text" id="new-host-name" placeholder="Project Name (e.g. blog)" class="input-text">
+                <div class="db-actions" style="margin-top:15px; justify-content: flex-end; display:flex;">
+                    <button class="btn btn-primary" onclick="createHost()">Create Host</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Download PHP Modal -->
+    <div id="php-download-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Download PHP Version</h2>
+                <button class="btn btn-icon close-modal" onclick="closePhpModal()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:10px; color:var(--text-muted);">Select an official Windows PHP binary (NTS x64) to download and extract automatically.</p>
+                <select id="php-download-select" class="select-dropdown">
+                    <option value="https://windows.php.net/downloads/releases/archives/php-8.3.4-nts-Win32-vs16-x64.zip|php-8.3.4">PHP 8.3.4</option>
+                    <option value="https://windows.php.net/downloads/releases/archives/php-8.2.16-nts-Win32-vs16-x64.zip|php-8.2.16">PHP 8.2.16</option>
+                    <option value="https://windows.php.net/downloads/releases/archives/php-8.1.27-nts-Win32-vs16-x64.zip|php-8.1.27">PHP 8.1.27</option>
+                    <option value="https://windows.php.net/downloads/releases/archives/php-7.4.33-nts-Win32-vc15-x64.zip|php-7.4.33">PHP 7.4.33</option>
+                </select>
+                <div id="php-dl-progress" style="margin-top:10px; color:var(--accent); font-size:0.9rem; font-family:monospace;"></div>
+                <div class="db-actions" style="margin-top:15px; justify-content: flex-end; display:flex;">
+                    <button class="btn btn-primary" id="btn-start-php-dl" onclick="startPhpDownload()">Download & Install</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="grant-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <h3 style="margin-bottom: 15px;">Grant Access</h3>
+            <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">Grant <span id="grant-username-display" style="color:var(--text); font-weight:bold;"></span> full access to a specific database.</p>
+            <div class="setting-row">
+                <label>Database Name</label>
+                <input type="text" id="grant-dbname" class="input-text" style="width: 100%; margin-top: 5px;" placeholder="e.g. myapp_db">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeGrantModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="grantDbAccess()">Grant Access</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="mysql-databases-list"></datalist>
+    <datalist id="postgres-databases-list"></datalist>
+
+    <script src="app.js?v=11"></script>
+</body>
+</html>
