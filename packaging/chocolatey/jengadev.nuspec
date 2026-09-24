@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>jengadev</id>
+    <version>1.0.25</version>
+    <packageSourceUrl>https://github.com/mtaalamtech/jengadev/tree/main/packaging/chocolatey</packageSourceUrl>
+    <owners>Core Mtaalam Technologies</owners>
+    <title>JengaDev</title>
+    <authors>Core Mtaalam Technologies</authors>
+    <projectUrl>https://github.com/mtaalamtech/jengadev</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/mtaalamtech/jengadev/main/JengaDev.ico</iconUrl>
+    <copyright>2026 Core Mtaalam Technologies</copyright>
+    <licenseUrl>https://github.com/mtaalamtech/jengadev/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/mtaalamtech/jengadev</projectSourceUrl>
+    <docsUrl>https://github.com/mtaalamtech/jengadev#readme</docsUrl>
+    <bugTrackerUrl>https://github.com/mtaalamtech/jengadev/issues</bugTrackerUrl>
+    <tags>php webserver localhost caddy mysql mariadb postgresql sqlite mailpit development laragon xampp</tags>
+    <summary>Portable Windows dev server - Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS.</summary>
+    <description>
+JengaDev is a portable local development server for Windows, built as an alternative to XAMPP and Laragon.
+
+- Automatic local HTTPS for every hosted site via Caddy - no manual certificate setup
+- Multiple switchable PHP versions
+- MySQL/MariaDB, PostgreSQL, and SQLite, each with an admin UI (phpMyAdmin/Adminer)
+- Mailpit built in for catching outgoing mail from hosted sites
+- Managed from a browser dashboard, opened automatically on launch
+
+Requires administrator rights to install (it installs and manages local services, and secures its own install folder against tampering by other local accounts).
+    </description>
+    <releaseNotes>https://github.com/mtaalamtech/jengadev/releases/tag/v1.0.25</releaseNotes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
