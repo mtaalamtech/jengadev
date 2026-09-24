@@ -2,8 +2,12 @@
 
 **A portable, zero-config local dev server for Windows.** Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit, managed from one browser dashboard — with automatic local HTTPS out of the box.
 
+[![Latest release](https://img.shields.io/github/v/release/mtaalamtech/jengadev?label=latest)](https://github.com/mtaalamtech/jengadev/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/mtaalamtech/jengadev/total?label=downloads)](https://github.com/mtaalamtech/jengadev/releases)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6.svg)
+
+[![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/mtaalamtech/jengadev/releases/latest)
 
 ![JengaDev dashboard overview](docs/dashboard-overview.png)
 
