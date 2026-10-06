@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mtaalamtech.github.io/jengadev/sitemap.xml

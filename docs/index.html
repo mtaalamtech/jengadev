@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JengaDev — Free Local Dev Server for Windows (XAMPP &amp; Laragon Alternative)</title>
+<meta name="description" content="JengaDev is a free, portable local development server for Windows: Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A modern alternative to XAMPP and Laragon.">
+<link rel="canonical" href="https://mtaalamtech.github.io/jengadev/">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0078D6">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="JengaDev — Free Local Dev Server for Windows">
+<meta property="og:description" content="Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A free alternative to XAMPP and Laragon.">
+<meta property="og:url" content="https://mtaalamtech.github.io/jengadev/">
+<meta property="og:image" content="https://mtaalamtech.github.io/jengadev/dashboard-overview.png">
+<meta property="og:site_name" content="JengaDev">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JengaDev — Free Local Dev Server for Windows">
+<meta name="twitter:description" content="Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard.">
+<meta name="twitter:image" content="https://mtaalamtech.github.io/jengadev/dashboard-overview.png">
+
+<!-- Structured data for search engines -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "JengaDev",
+  "url": "https://mtaalamtech.github.io/jengadev/",
+  "downloadUrl": "https://github.com/mtaalamtech/jengadev/releases/latest",
+  "softwareVersion": "1.0.25",
+  "operatingSystem": "Windows",
+  "applicationCategory": "DeveloperApplication",
+  "description": "A free, portable local development server for Windows bundling Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "Core Mtaalam Technologies",
+    "url": "https://mtaalamtech.com"
+  },
+  "license": "https://github.com/mtaalamtech/jengadev/blob/main/LICENSE"
+}
+</script>
+
+<style>
+  :root {
+    --paper: #f3f4f6;
+    --surface: #ffffff;
+    --ink: #15181d;
+    --muted: #596270;
+    --line: #dde1e6;
+    --accent: #0078D6;
+    --accent-ink: #005a9e;
+    --accent-soft: #e6f1fb;
+    --code-bg: #0d1117;
+    --code-ink: #c9d1d9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0d1117;
+      --surface: #161b22;
+      --ink: #e6edf3;
+      --muted: #9198a1;
+      --line: #30363d;
+      --accent: #4aa8f5;
+      --accent-ink: #79c0ff;
+      --accent-soft: #112437;
+      --code-bg: #0a0e14;
+      --code-ink: #c9d1d9;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+  header.hero {
+    padding-block: 64px 48px;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent-ink);
+  }
+  h1 { font-size: 2.5rem; line-height: 1.1; margin: 10px 0 14px; text-wrap: balance; }
+  .tagline { font-size: 1.2rem; color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-block; padding: 12px 22px; border-radius: 8px; font-weight: 600;
+    text-decoration: none; font-size: 0.95rem;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+  .badges { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .badges img { height: 20px; }
+
+  section { padding-block: 40px; border-bottom: 1px solid var(--line); }
+  section h2 { font-size: 1.6rem; margin-bottom: 18px; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+  .feature { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .feature h3 { margin: 0 0 6px; font-size: 1.05rem; }
+  .feature p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 480px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  td.hl { color: var(--accent-ink); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+
+  .shot { max-width: 100%; border-radius: 10px; border: 1px solid var(--line); display: block; margin-top: 20px; }
+
+  footer { padding-block: 32px; color: var(--muted); font-size: 0.85rem; }
+  footer a { color: var(--accent-ink); }
+  code { background: var(--code-bg); color: var(--code-ink); padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Free &middot; Open Source &middot; Windows</div>
+    <h1>A local dev server for Windows that doesn't fight you.</h1>
+    <p class="tagline">JengaDev bundles Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit into one portable package — with automatic local HTTPS out of the box. A modern, free alternative to XAMPP and Laragon.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/mtaalamtech/jengadev/releases/latest">Download for Windows</a>
+      <a class="btn btn-secondary" href="https://github.com/mtaalamtech/jengadev">View on GitHub</a>
+    </div>
+    <div class="badges">
+      <a href="https://github.com/mtaalamtech/jengadev/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mtaalamtech/jengadev?label=latest"></a>
+      <a href="https://github.com/mtaalamtech/jengadev/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/mtaalamtech/jengadev/total?label=downloads"></a>
+      <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg">
+    </div>
+  </header>
+
+  <section>
+    <h2>Why developers switch</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>Automatic local HTTPS</h3>
+        <p>Caddy issues and trusts local certificates for every hosted site automatically — no manual mkcert setup like Laragon needs.</p>
+      </div>
+      <div class="feature">
+        <h3>Mail testing built in</h3>
+        <p>Mailpit catches every outgoing email from your hosted sites so you can inspect it in a browser — nothing to install separately.</p>
+      </div>
+      <div class="feature">
+        <h3>Three databases, one tool</h3>
+        <p>MySQL/MariaDB, PostgreSQL, and SQLite, each with an admin UI (phpMyAdmin or Adminer), switchable per project.</p>
+      </div>
+      <div class="feature">
+        <h3>Browser dashboard</h3>
+        <p>Start and stop services, manage hosts, databases, and PHP versions from an authenticated dashboard that opens automatically.</p>
+      </div>
+      <div class="feature">
+        <h3>Per-host PHP logs</h3>
+        <p>Every site gets its own error log with automatic size-based rotation, so logs stay readable as your project count grows.</p>
+      </div>
+      <div class="feature">
+        <h3>Security-reviewed</h3>
+        <p>Per-install API auth, checksum-verified downloads, and a locked-down install folder — see the <a href="https://github.com/mtaalamtech/jengadev#security">security notes</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>JengaDev vs. XAMPP vs. Laragon</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Feature</th><th>JengaDev</th><th>Laragon</th><th>XAMPP</th></tr></thead>
+        <tbody>
+          <tr><td>Local HTTPS</td><td class="hl">Automatic (Caddy)</td><td>Manual mkcert setup</td><td>Not built in</td></tr>
+          <tr><td>Mail catcher</td><td class="hl">Built in (Mailpit)</td><td>Not bundled</td><td>Not bundled</td></tr>
+          <tr><td>Databases</td><td>MySQL/MariaDB + PostgreSQL + SQLite</td><td>MySQL/MariaDB + addons</td><td>MySQL/MariaDB</td></tr>
+          <tr><td>Control surface</td><td>Browser dashboard</td><td>Native tray app</td><td>Native control panel</td></tr>
+          <tr><td>License</td><td>Free &amp; open source (MIT)</td><td>Free, closed source</td><td>Free, open source</td></tr>
+          <tr><td>Platforms</td><td>Windows</td><td>Windows</td><td>Windows / macOS / Linux</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <img class="shot" src="dashboard-overview.png" alt="JengaDev browser dashboard showing Caddy, PHP, and Mailpit running" loading="lazy">
+  </section>
+
+  <section style="border-bottom:none;">
+    <h2>Get started</h2>
+    <p>Download the installer, run it (it asks for admin rights once), and JengaDev opens its dashboard automatically with an authenticated session already set up.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/mtaalamtech/jengadev/releases/latest">Download the latest release</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>JengaDev is open source under the <a href="https://github.com/mtaalamtech/jengadev/blob/main/LICENSE">MIT License</a>. Bundled third-party components (Caddy, PHP, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, Node.js) keep their own licenses — see <a href="https://github.com/mtaalamtech/jengadev/blob/main/THIRD-PARTY-NOTICES.txt">THIRD-PARTY-NOTICES.txt</a>.</p>
+    <p>Built by <a href="https://mtaalamtech.com">Core Mtaalam Technologies</a>. &middot; <a href="https://github.com/mtaalamtech/jengadev/issues">Report an issue</a></p>
+  </footer>
+</div>
+
+</body>
+</html>

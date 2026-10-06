@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-This license covers JengaDev's own source code (the daemon and dashboard).
-JengaDev bundles and/or downloads third-party components (Caddy, PHP,
-MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, Node.js, and various npm
-packages) under their own respective licenses - see THIRD-PARTY-NOTICES.txt.
