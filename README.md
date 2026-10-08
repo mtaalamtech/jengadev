@@ -16,7 +16,7 @@
 JengaDev gives you both for free, out of the box:
 
 | Feature | JengaDev |
-|---|---|---|---|
+|---|---|
 | Local HTTPS | **Automatic (Caddy)** |
 | Mail catcher | **Built in (Mailpit)** |
 | Databases | MySQL/MariaDB + PostgreSQL + SQLite |
