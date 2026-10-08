@@ -13,15 +13,15 @@
 
 ## Why JengaDev
 
-XAMPP is dated. Laragon is fast and free, but automatic HTTPS and mail testing still take manual setup. JengaDev gives you both for free, out of the box:
+JengaDev gives you both for free, out of the box:
 
-| Feature | JengaDev | Laragon | XAMPP |
+| Feature | JengaDev |
 |---|---|---|---|
-| Local HTTPS | **Automatic (Caddy)** | Manual mkcert setup | Not built in |
-| Mail catcher | **Built in (Mailpit)** | Not bundled | Not bundled |
-| Databases | MySQL/MariaDB + PostgreSQL + SQLite | MySQL/MariaDB + addons | MySQL/MariaDB |
-| Control surface | Browser dashboard | Native tray app | Native control panel |
-| Platforms | Windows | Windows | Windows / macOS / Linux |
+| Local HTTPS | **Automatic (Caddy)** |
+| Mail catcher | **Built in (Mailpit)** |
+| Databases | MySQL/MariaDB + PostgreSQL + SQLite |
+| Control surface | Browser dashboard |
+| Platforms | Windows(Other platforms Coming) |
 
 ## Features
 
