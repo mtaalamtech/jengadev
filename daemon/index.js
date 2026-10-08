@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.26';
+const APP_VERSION = '1.0.27';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -394,9 +394,17 @@ app.post('/api/hosts/create', async (req, res) => {
       fs.writeFileSync(path.join(hostPath, 'index.php'), `<?php\n\n// Welcome to ${domain}\nphpinfo();\n`);
     }
     
-    // Write to hosts manager
-    await hostsManager.sync();
+    // Write to hosts manager. This used to be fire-and-forget - if the UAC
+    // prompt for editing the hosts file was declined or missed, the API
+    // still reported success with no indication the domain wouldn't
+    // actually resolve, which is exactly the "it's not automatically added"
+    // symptom this was causing.
+    const syncResult = await hostsManager.sync();
     scanHostMeta(); // force quick update so size/stack show up immediately
+
+    if (!syncResult.success) {
+      return res.json({ success: false, message: `Host ${domain} created, but the hosts file wasn't updated: ${syncResult.message}. The site files exist - click Create again once you've approved the Windows permission prompt.` });
+    }
 
     res.json({ success: true, message: `Host ${domain} created` });
     

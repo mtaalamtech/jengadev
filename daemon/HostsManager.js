@@ -53,8 +53,13 @@ class HostsManager {
 
         // 4. Try updating via PowerShell directly or via UAC elevation.
         // Use EncodedCommand to completely avoid quoting bugs and temp file races.
+        // Every call used to append its own "# Added by JengaDev" header
+        // unconditionally, so each new host created a fresh duplicate header
+        // instead of growing one block - only add it if it's not there yet.
+        const hasHeader = /^#\s*Added by JengaDev\s*$/m.test(hostsContent);
+        const headerLine = hasHeader ? '' : '# Added by JengaDev\r\n';
         const appendLines = missing.map(d => `${IP} ${d}`).join('\r\n');
-        const psContent = `$ErrorActionPreference = 'Stop'; $hostsPath = '${HOSTS_FILE}'; Add-Content -Path $hostsPath -Value ''; Add-Content -Path $hostsPath -Value '# Added by JengaDev'; Add-Content -Path $hostsPath -Value '${appendLines}';`;
+        const psContent = `$ErrorActionPreference = 'Stop'; $hostsPath = '${HOSTS_FILE}'; Add-Content -Path $hostsPath -Value '\r\n${headerLine}${appendLines}';`;
         
         // Convert to UTF-16LE Base64 for PowerShell -EncodedCommand
         const base64Cmd = Buffer.from(psContent, 'utf16le').toString('base64');
