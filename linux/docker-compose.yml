@@ -1,0 +1,114 @@
+name: jengadev
+
+# The JengaDev daemon itself is NOT a service here - it runs directly on the
+# host (a single Linux binary, same pkg-compiled approach as the Windows
+# build) and controls everything below by shelling out to `docker compose`.
+# Running the daemon as a container too ("Docker outside of Docker", with
+# the socket bind-mounted) was the first draft, but every volume path below
+# is resolved by the Docker Engine on the HOST - a containerized daemon
+# would need its own filesystem view translated back to host paths for
+# every bind mount, purely to save requiring Node on the host. Simpler and
+# more consistent with how the Windows daemon already works: just run it
+# on the host directly.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: jengadev_caddy
+    restart: unless-stopped
+    profiles: ["services"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - ./www:/var/www
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./logs:/var/log/jengadev
+
+  php81:
+    build:
+      context: ./php
+      args:
+        PHP_VERSION: "8.1"
+    image: jengadev-php:8.1
+    container_name: jengadev_php81
+    restart: unless-stopped
+    profiles: ["services"]
+    volumes:
+      - ./www:/var/www
+      - ./logs/php:/var/log/jengadev-php
+
+  php82:
+    build:
+      context: ./php
+      args:
+        PHP_VERSION: "8.2"
+    image: jengadev-php:8.2
+    container_name: jengadev_php82
+    restart: unless-stopped
+    profiles: ["services"]
+    volumes:
+      - ./www:/var/www
+      - ./logs/php:/var/log/jengadev-php
+
+  php83:
+    build:
+      context: ./php
+      args:
+        PHP_VERSION: "8.3"
+    image: jengadev-php:8.3
+    container_name: jengadev_php83
+    restart: unless-stopped
+    profiles: ["services"]
+    volumes:
+      - ./www:/var/www
+      - ./logs/php:/var/log/jengadev-php
+
+  mariadb:
+    image: mariadb:11
+    container_name: jengadev_mariadb
+    restart: unless-stopped
+    profiles: ["services"]
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  postgres:
+    image: postgres:16
+    container_name: jengadev_postgres
+    restart: unless-stopped
+    profiles: ["services"]
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set in .env on first run}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: jengadev_mailpit
+    restart: unless-stopped
+    profiles: ["services"]
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
+  adminer:
+    image: adminer:latest
+    container_name: jengadev_adminer
+    restart: unless-stopped
+    profiles: ["services"]
+    ports:
+      - "127.0.0.1:8081:8080"
+
+volumes:
+  mariadb_data:
+  postgres_data:
+  caddy_data:
+  caddy_config:

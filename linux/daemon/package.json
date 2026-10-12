@@ -1,0 +1,12 @@
+{
+  "name": "jengadev-linux-daemon",
+  "version": "0.1.0",
+  "description": "JengaDev daemon for Linux - manages the Docker Compose stack.",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.6",
+    "body-parser": "^2.3.0"
+  }
+}
