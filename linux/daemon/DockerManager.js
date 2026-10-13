@@ -24,11 +24,14 @@ class DockerManager {
 
   // "up -d" both creates (first run) and starts (later runs) a service,
   // building its image first if one isn't already built (php81/82/83).
-  // A first-time PHP build compiles several C extensions from source and
-  // measured over 4 minutes on a real server - well past the default
-  // 2-minute timeout, which was silently killing the build mid-way and
-  // reporting a confusing partial error. Give builds a generous ceiling;
-  // an already-built image starts in a couple of seconds regardless.
+  // PHP images are prebuilt and pulled from ghcr.io now (see
+  // docker-compose.yml), not built locally, so this almost never needs
+  // more than a few seconds in practice. The generous ceiling is left in
+  // place for a slow first pull, or for anyone who points docker-
+  // compose.yml back at a local `build:` - a first-time build from source
+  // measured over 4 minutes on a real server, well past the default
+  // 2-minute timeout, which used to silently kill it mid-way with a
+  // confusing partial error.
   async start(service) {
     const result = await this._run(`up -d --build ${service}`, 600000);
     return { success: result.success, message: result.success ? `${service} started` : `Failed to start ${service}: ${result.stderr || result.error}` };

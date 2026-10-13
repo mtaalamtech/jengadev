@@ -23,48 +23,48 @@ services:
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile
       - ./www:/var/www
+      - ./config/ssl:/etc/caddy/ssl:ro
       - caddy_data:/data
       - caddy_config:/config
       - ./logs:/var/log/jengadev
 
   php81:
-    build:
-      context: ./php
-      args:
-        PHP_VERSION: "8.1"
-    image: jengadev-php:8.1
+    # Prebuilt and pushed to GHCR (see php/Dockerfile for the source - a
+    # local build took 4+ minutes per version on real hardware, which was
+    # a bad first-run experience for something meant to be "as simple as
+    # possible"). Rebuild+push with: docker build --build-arg
+    # PHP_VERSION=8.1 -t ghcr.io/mtaalamtech/jengadev-php:8.1 ./php
+    image: ghcr.io/mtaalamtech/jengadev-php:8.1
     container_name: jengadev_php81
     restart: unless-stopped
     profiles: ["services"]
     volumes:
       - ./www:/var/www
       - ./logs/php:/var/log/jengadev-php
+      - ./config/php_error_router.php:/etc/jengadev/php_error_router.php:ro
+      - ./config/php-error-router.ini:/usr/local/etc/php/conf.d/99-jengadev.ini:ro
 
   php82:
-    build:
-      context: ./php
-      args:
-        PHP_VERSION: "8.2"
-    image: jengadev-php:8.2
+    image: ghcr.io/mtaalamtech/jengadev-php:8.2
     container_name: jengadev_php82
     restart: unless-stopped
     profiles: ["services"]
     volumes:
       - ./www:/var/www
       - ./logs/php:/var/log/jengadev-php
+      - ./config/php_error_router.php:/etc/jengadev/php_error_router.php:ro
+      - ./config/php-error-router.ini:/usr/local/etc/php/conf.d/99-jengadev.ini:ro
 
   php83:
-    build:
-      context: ./php
-      args:
-        PHP_VERSION: "8.3"
-    image: jengadev-php:8.3
+    image: ghcr.io/mtaalamtech/jengadev-php:8.3
     container_name: jengadev_php83
     restart: unless-stopped
     profiles: ["services"]
     volumes:
       - ./www:/var/www
       - ./logs/php:/var/log/jengadev-php
+      - ./config/php_error_router.php:/etc/jengadev/php_error_router.php:ro
+      - ./config/php-error-router.ini:/usr/local/etc/php/conf.d/99-jengadev.ini:ro
 
   mariadb:
     image: mariadb:11
@@ -77,6 +77,7 @@ services:
       - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./config/mysql-custom.cnf:/etc/mysql/conf.d/99-jengadev.cnf:ro
 
   postgres:
     image: postgres:16
@@ -95,9 +96,34 @@ services:
     container_name: jengadev_mailpit
     restart: unless-stopped
     profiles: ["services"]
+    environment:
+      # Confirmed against the real image: these bind to the same-named CLI
+      # flags via viper's env support, not documented in --help since
+      # there's no entrypoint script doing the translation. An empty auth
+      # file (the default - see mailpit_auth.txt below) is treated as "no
+      # auth required", confirmed the same way, so this is safe to always
+      # pass rather than only when the dashboard has configured credentials.
+      - MP_SMTP_AUTH_FILE=/etc/jengadev/mailpit_auth.txt
+      - MP_SMTP_AUTH_ALLOW_INSECURE=true
     ports:
-      - "127.0.0.1:8025:8025"
-      - "127.0.0.1:1025:1025"
+      # The host-side ports are configurable (MAILPIT_SMTP_PORT/
+      # MAILPIT_WEB_PORT in .env, written by the daemon) - the container's
+      # own internal bind addresses stay fixed at Mailpit's defaults
+      # (8025/1025), since MP_LISTEN/MP_SMTP do NOT rebind those the way
+      # MP_SMTP_AUTH_FILE does (confirmed directly - setting them had no
+      # effect), so only the published mapping changes, not the internal
+      # listen address. The web UI is exposed on every interface, same
+      # reasoning as the daemon's own dashboard - it's iframed from the
+      # dashboard, which is deliberately LAN-reachable for headless
+      # servers, so a loopback-only bind here would just break that iframe
+      # for every remote viewer. The SMTP port stays loopback-only -
+      # nothing needs to relay mail into this box from elsewhere on the
+      # LAN, only the PHP containers do (over the internal Docker network,
+      # not this port).
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+    volumes:
+      - ./config/mailpit_auth.txt:/etc/jengadev/mailpit_auth.txt:ro
 
   adminer:
     image: adminer:latest
@@ -105,7 +131,23 @@ services:
     restart: unless-stopped
     profiles: ["services"]
     ports:
-      - "127.0.0.1:8081:8080"
+      # Same reasoning as Mailpit's 8025 above - iframed from the LAN-
+      # reachable dashboard, so it needs to be LAN-reachable too. Adminer
+      # itself still requires real DB credentials to connect to anything,
+      # so this doesn't widen access to the databases - just to the login
+      # form.
+      - "8081:8080"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: jengadev_phpmyadmin
+    restart: unless-stopped
+    profiles: ["services"]
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+    ports:
+      - "8082:80"
 
 volumes:
   mariadb_data:

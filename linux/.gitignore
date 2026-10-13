@@ -1,0 +1,7 @@
+node_modules/
+jengadev-daemon-linux-x64
+jengadev-daemon
+.env
+config/
+logs/
+www/

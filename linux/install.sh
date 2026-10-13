@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # JengaDev for Linux - installer.
 #
-# The only real dependency is Docker; everything else (Caddy, PHP,
-# MariaDB, PostgreSQL, Mailpit) runs as containers so there's nothing to
-# compile or version-match against the host distro. This script: checks
-# for Docker, installs it if missing (Debian/Ubuntu and Fedora/RHEL
-# covered directly; other distros get a link), checks for Node.js (needed
-# to run the daemon itself - a precompiled binary is a later step),
-# installs daemon dependencies, and sets up a systemd user service so
-# JengaDev starts automatically on login without a terminal window.
+# The only dependency is Docker; everything else (Caddy, PHP, MariaDB,
+# PostgreSQL, Mailpit) runs as containers so there's nothing to compile or
+# version-match against the host distro. The daemon itself is a single
+# pkg-compiled binary (no Node.js needed on the host) downloaded from the
+# latest GitHub release. This script: checks for Docker, installs it if
+# missing (Debian/Ubuntu and Fedora/RHEL covered directly; other distros
+# get a link), downloads the daemon binary, and sets up a systemd user
+# service so JengaDev starts automatically on login without a terminal
+# window.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+DAEMON_URL="https://github.com/mtaalamtech/jengadev/releases/latest/download/jengadev-daemon-linux-x64"
 
 echo "== JengaDev for Linux - installer =="
 echo
@@ -43,7 +46,7 @@ if ! command -v docker >/dev/null 2>&1; then
   sudo usermod -aG docker "$USER"
   echo
   echo "Docker installed. You've been added to the 'docker' group - log out and"
-  echo "back in (or run 'newgrp docker') once, then re-run this script."
+  echo "back in once, then re-run this script."
   exit 0
 fi
 
@@ -55,26 +58,22 @@ fi
 
 if ! docker ps >/dev/null 2>&1; then
   echo "Docker is installed but not usable by this user yet."
-  echo "Run: sudo usermod -aG docker \$USER && newgrp docker"
-  echo "...then re-run this script."
+  echo "Run: sudo usermod -aG docker \$USER, then log out and back in (a plain"
+  echo "'newgrp docker' isn't enough - see the troubleshooting note below)."
   exit 1
 fi
 
 echo "Docker OK ($(docker --version))"
 
-# --- 2. Node.js (to run the daemon) ---
-if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js not found - installing via NodeSource..."
-  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-  sudo apt-get install -y nodejs
+# --- 2. Daemon binary ---
+if [ ! -f jengadev-daemon ] || [ "${1:-}" = "--upgrade" ]; then
+  echo "Downloading the JengaDev daemon..."
+  curl -fsSL "$DAEMON_URL" -o jengadev-daemon
+  chmod +x jengadev-daemon
 fi
-echo "Node.js OK ($(node --version))"
+echo "Daemon binary ready."
 
-# --- 3. Daemon dependencies ---
-echo "Installing daemon dependencies..."
-(cd daemon && npm install --omit=dev --no-audit --no-fund --silent)
-
-# --- 4. Postgres needs a password on first run - generate one if the
+# --- 3. Postgres needs a password on first run - generate one if the
 # project .env doesn't have one yet, same spirit as the Windows build no
 # longer shipping Postgres with trust auth. ---
 if [ ! -f .env ] || ! grep -q '^POSTGRES_PASSWORD=' .env 2>/dev/null; then
@@ -87,12 +86,22 @@ mkdir -p www config logs/php
 # existence before `docker compose up` ever tries to mount it. The daemon
 # overwrites it with real content once it starts.
 [ -f config/Caddyfile ] || touch config/Caddyfile
+# Same bind-mount-becomes-a-directory risk applies to the per-host PHP error
+# log router files mounted into the php81/82/83 containers - only matters if
+# a php service gets started before the daemon has run once to write real
+# content, but cheap to guard against regardless.
+[ -f config/php_error_router.php ] || touch config/php_error_router.php
+[ -f config/php-error-router.ini ] || touch config/php-error-router.ini
+# Same again for MariaDB's custom my.cnf overlay.
+[ -f config/mysql-custom.cnf ] || touch config/mysql-custom.cnf
+# Same again for Mailpit's SMTP auth file.
+[ -f config/mailpit_auth.txt ] || touch config/mailpit_auth.txt
 
-# --- 5. Start Caddy up front so the dashboard's reverse-proxy and *.localhost
+# --- 4. Start Caddy up front so the dashboard's reverse-proxy and *.localhost
 # routing work immediately; other services start on demand from the dashboard. ---
 docker compose up -d --build caddy
 
-# --- 6. Run the daemon as a systemd --user service - starts automatically on
+# --- 5. Run the daemon as a systemd --user service - starts automatically on
 # login, no terminal window, survives logout via linger. ---
 mkdir -p "$HOME/.config/systemd/user"
 cat > "$HOME/.config/systemd/user/jengadev.service" <<EOF
@@ -100,7 +109,7 @@ cat > "$HOME/.config/systemd/user/jengadev.service" <<EOF
 Description=JengaDev daemon
 
 [Service]
-ExecStart=$(command -v node) $SCRIPT_DIR/daemon/index.js
+ExecStart=$SCRIPT_DIR/jengadev-daemon
 WorkingDirectory=$SCRIPT_DIR
 Restart=on-failure
 
@@ -134,7 +143,16 @@ if [ -f "$TOKEN_FILE" ]; then
 fi
 
 echo
-echo "JengaDev is running. Dashboard: http://127.0.0.1:4000"
-echo "(It should have opened automatically; if not, open that URL - the"
-echo "daemon prints a one-time tokenized link to its own log on first run:"
-echo "  journalctl --user -u jengadev -n 20)"
+echo "JengaDev is running."
+if [ -f "$TOKEN_FILE" ]; then
+  TOKEN="$(cat "$TOKEN_FILE")"
+  LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  echo "Dashboard: http://127.0.0.1:4000/?token=$TOKEN"
+  if [ -n "$LAN_IP" ]; then
+    echo "From another device on this network: http://$LAN_IP:4000/?token=$TOKEN"
+    echo "(if that doesn't load, this machine's firewall may be blocking port 4000 -"
+    echo "that's something only you should open, this script won't touch firewall rules)"
+  fi
+else
+  echo "Couldn't find the daemon token yet - check: journalctl --user -u jengadev -n 20"
+fi

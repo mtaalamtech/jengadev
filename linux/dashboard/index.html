@@ -3,69 +3,530 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JengaDev</title>
+<title>JengaDev Dashboard</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0d1117; --panel:#161b22; --line:#30363d; --ink:#e6edf3; --muted:#9198a1; --accent:#4aa8f5; --ok:#3fb950; --bad:#f85149; }
+  :root {
+    --bg: #0f1115;
+    --sidebar-bg: #16181d;
+    --card-bg: rgba(30, 33, 40, 0.6);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --ink: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --ok: #10b981;
+    --bad: #ef4444;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI",system-ui,sans-serif; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); }
-  header h1 { font-size:1.1rem; margin:0; }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin-bottom:20px; }
-  .panel h2 { margin:0 0 14px; font-size:0.95rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; }
-  .svc-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
-  .svc-row:last-child { border-bottom:none; }
-  .svc-name { font-weight:600; }
-  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; background:var(--muted); }
-  .dot.running { background:var(--ok); }
-  .dot.stopped { background:var(--muted); }
-  button { background:var(--accent); color:#06121f; border:none; padding:6px 14px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem; }
-  button.secondary { background:transparent; color:var(--ink); border:1px solid var(--line); }
-  button.danger { background:var(--bad); color:#fff; }
-  input[type=text] { background:var(--bg); border:1px solid var(--line); color:var(--ink); padding:8px 10px; border-radius:6px; font-size:0.9rem; }
-  .hosts-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',-apple-system,"Segoe UI",system-ui,sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* Toolbar */
+  .toolbar { height:60px; flex:none; background:var(--sidebar-bg); border-bottom:1px solid var(--card-border); display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand img { height:30px; }
+  .brand-text { display:flex; flex-direction:column; line-height:1.1; }
+  .brand-text .name { font-weight:700; font-size:1.05rem; }
+  .brand-text .by { font-size:0.65rem; font-weight:400; color:var(--muted); }
+  .brand-text .by a { color:inherit; text-decoration:none; }
+  .global-status { display:flex; gap:22px; }
+  .indicator { display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--muted); }
+  .indicator .dot { width:8px; height:8px; border-radius:50%; background:#475569; }
+  .indicator.running .dot { background:var(--ok); }
+  .toolbar-right { display:flex; align-items:center; gap:12px; }
+  .toolbar-right a { color:var(--muted); text-decoration:none; font-size:0.85rem; font-weight:500; }
+  .toolbar-right a:hover { color:var(--ink); }
+
+  /* Buttons */
+  button, .btn { background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem; font-family:inherit; transition:background 0.15s; }
+  button:hover, .btn:hover { background:var(--accent-hover); }
+  button.secondary, .btn.secondary { background:transparent; color:var(--ink); border:1px solid var(--card-border); }
+  button.secondary:hover, .btn.secondary:hover { background:rgba(255,255,255,0.05); }
+  button.danger, .btn.danger { background:rgba(239,68,68,0.1); color:var(--bad); border:1px solid rgba(239,68,68,0.2); }
+  button.danger:hover { background:rgba(239,68,68,0.18); }
+  button:disabled { opacity:0.5; cursor:default; }
+
+  /* Layout: sidebar + content */
+  .main-layout { flex:1; display:flex; min-height:0; }
+  .sidebar { width:220px; flex:none; background:var(--sidebar-bg); border-right:1px solid var(--card-border); padding:16px 0; overflow-y:auto; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; cursor:pointer; color:var(--muted); font-size:0.9rem; font-weight:500; }
+  .nav-item:hover { color:var(--ink); background:rgba(255,255,255,0.03); }
+  .nav-item.active { color:var(--accent); background:rgba(59,130,246,0.08); }
+  .nav-item svg { flex:none; }
+  .nav-item .nav-label { flex:1; }
+  .nav-section-title { padding:18px 20px 6px; font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+  .switch { position:relative; display:inline-block; width:34px; height:18px; flex:none; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#475569; border-radius:18px; transition:0.15s; }
+  .slider:before { content:""; position:absolute; height:14px; width:14px; left:2px; top:2px; background:#fff; border-radius:50%; transition:0.15s; }
+  .switch input:checked + .slider { background:var(--ok); }
+  .switch input:checked + .slider:before { transform:translateX(16px); }
+  .switch input:disabled + .slider { opacity:0.5; cursor:default; }
+
+  .content-area { flex:1; overflow-y:auto; padding:28px 32px; }
+  .pane { display:none; }
+  .pane.active { display:block; }
+  .pane-header { margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-start; }
+  .pane-header h2 { margin:0 0 4px; font-size:1.4rem; }
+  .pane-header p { margin:0; color:var(--muted); font-size:0.9rem; }
+  .pane-actions { display:flex; align-items:center; gap:12px; }
+  .status-badge { font-size:0.8rem; padding:4px 10px; border-radius:20px; font-weight:600; }
+  .status-badge.running { background:rgba(16,185,129,0.12); color:var(--ok); }
+  .status-badge.stopped { background:rgba(148,163,184,0.12); color:var(--muted); }
+
+  .card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; padding:18px 20px; margin-bottom:20px; }
+  .card h3 { margin:0 0 14px; font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+  .perf-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--card-border); font-size:0.9rem; }
+  .perf-row:last-child { border-bottom:none; }
+  .perf-row .state { font-weight:600; }
+  .perf-row .state.running { color:var(--ok); }
+  .perf-row .state.stopped { color:var(--muted); }
+  .ext-tag { background:rgba(16,185,129,0.1); color:var(--ok); border:1px solid rgba(16,185,129,0.2); border-radius:20px; padding:4px 12px; font-size:0.8rem; font-weight:600; }
+
+  .terminal { background:#000; border:1px solid var(--card-border); border-radius:10px; padding:14px 16px; font-family:ui-monospace,Consolas,monospace; font-size:0.82rem; height:220px; overflow-y:auto; }
+  .terminal .line { margin-bottom:4px; color:#9ca3af; }
+  .terminal .line .time { color:#6b7280; margin-right:8px; }
+  .terminal .line.ok { color:#34d399; }
+  .terminal .line.err { color:#f87171; }
+
+  .setting-row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--card-border); font-size:0.9rem; }
+  .setting-row:last-child { border-bottom:none; }
+  .setting-row label { color:var(--muted); }
+
+  .hosts-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--card-border); }
   .hosts-row:last-child { border-bottom:none; }
   .host-domain { font-weight:600; }
   .host-domain a { color:var(--accent); text-decoration:none; }
+  .host-domain a:hover { text-decoration:underline; }
   .create-row { display:flex; gap:10px; margin-top:14px; }
-  .toast { position:fixed; bottom:20px; right:20px; background:var(--panel); border:1px solid var(--line); padding:12px 18px; border-radius:8px; font-size:0.9rem; display:none; }
+  .create-row input { flex:1; }
+
+  .split-pane { display:flex; gap:0; background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; overflow:hidden; min-height:400px; }
+  .split-master { width:300px; flex:none; border-right:1px solid var(--card-border); display:flex; flex-direction:column; }
+  .master-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--card-border); font-weight:600; font-size:0.9rem; flex:none; }
+  .master-item { padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--card-border); }
+  .master-item:hover { background:rgba(255,255,255,0.03); }
+  .master-item.active { background:var(--accent); }
+  .master-item.active .master-item-domain, .master-item.active .master-item-sub { color:#fff; }
+  .master-item-domain { font-weight:600; }
+  .master-item-sub { font-size:0.8rem; color:var(--muted); }
+  .split-detail { flex:1; padding:20px 24px; }
+  .sqlite-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:0.88rem; }
+  .tech-tag { background:rgba(59,130,246,0.12); color:var(--accent); border-radius:4px; padding:2px 8px; font-size:0.75rem; font-weight:600; }
+
+  input[type=text] { background:var(--bg); border:1px solid var(--card-border); color:var(--ink); padding:9px 12px; border-radius:6px; font-size:0.9rem; font-family:inherit; }
+  input[type=text]:focus, select:focus { outline:1px solid var(--accent); }
+  select { background:var(--bg); border:1px solid var(--card-border); color:var(--ink); padding:7px 12px; border-radius:6px; font-family:inherit; }
+
+  .toast { position:fixed; bottom:20px; right:20px; background:var(--sidebar-bg); border:1px solid var(--card-border); padding:12px 18px; border-radius:8px; font-size:0.9rem; display:none; box-shadow:0 4px 16px rgba(0,0,0,0.3); z-index:50; }
   .toast.show { display:block; }
   .toast.error { border-color:var(--bad); color:var(--bad); }
-  select { background:var(--bg); border:1px solid var(--line); color:var(--ink); padding:6px 10px; border-radius:6px; }
-  .quicklinks a { color:var(--accent); text-decoration:none; margin-right:16px; font-size:0.85rem; }
+
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
+  .modal-overlay.show { display:flex; }
+  .modal-box { background:var(--sidebar-bg); border:1px solid var(--card-border); border-radius:10px; padding:24px; width:480px; max-width:90vw; max-height:85vh; overflow-y:auto; }
+  .modal-box .setting-row input[type=text] { width:220px; }
+
+  .ssl-info-banner { font-size:0.82rem; color:var(--ink); background:rgba(255,255,255,0.05); padding:12px 14px; border-radius:6px; margin-bottom:18px; line-height:1.6; }
+  .ssl-table { width:100%; border-collapse:collapse; text-align:left; font-size:0.88rem; }
+  .ssl-table thead { background:rgba(0,0,0,0.2); font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid var(--card-border); }
+  .ssl-table th, .ssl-table td { padding:13px 16px; }
+  .ssl-table tbody tr { border-bottom:1px solid var(--card-border); }
+  .ssl-table tbody tr:last-child { border-bottom:none; }
+  .ssl-status-pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.78rem; background:rgba(148,163,184,0.15); color:var(--muted); }
+  .ssl-status-pill.active { background:rgba(16,185,129,0.12); color:var(--ok); }
+  .ssl-status-pill.pending { background:rgba(59,130,246,0.12); color:var(--accent); }
+  .ssl-action-link { color:var(--accent); text-decoration:none; font-size:0.85rem; font-weight:500; cursor:pointer; margin-left:14px; background:none; border:none; padding:0; font-family:inherit; }
+  .ssl-action-link:hover { text-decoration:underline; }
+  .ssl-action-link:first-child { margin-left:0; }
+
+  .iframe-wrap { border:1px solid var(--card-border); border-radius:10px; overflow:hidden; height:600px; }
+  .iframe-wrap iframe { width:100%; height:100%; border:none; }
 </style>
 </head>
 <body>
-  <header>
-    <h1>🧱 JengaDev</h1>
-    <div class="quicklinks">
-      <a href="http://127.0.0.1:8025" target="_blank">Mailpit</a>
-      <a href="http://127.0.0.1:8081" target="_blank">Adminer</a>
+  <header class="toolbar">
+    <div class="brand">
+      <img src="logo.png" alt="JengaDev">
+      <div class="brand-text">
+        <span class="name">JengaDev</span>
+        <span class="by"><a href="https://mtaalamtech.com" target="_blank">by Core Mtaalam Technologies</a></span>
+      </div>
+    </div>
+    <div class="global-status" id="global-status"></div>
+    <div class="toolbar-right">
+      <a id="link-mailpit" href="#" target="_blank">Mailpit</a>
+      <a id="link-adminer" href="#" target="_blank">Adminer</a>
+      <a id="link-phpmyadmin" href="#" target="_blank">phpMyAdmin</a>
+      <button class="secondary" id="btn-stop-all" onclick="stopAll()">Stop All</button>
+      <button id="btn-start-all" onclick="startAll()">Start All</button>
     </div>
   </header>
 
-  <div class="wrap">
-    <div class="panel">
-      <h2>Services</h2>
-      <div id="services"></div>
-    </div>
+  <div class="main-layout">
+    <aside class="sidebar">
+      <div class="nav-item active" data-pane="overview" onclick="showPane('overview')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span class="nav-label">Overview</span>
+      </div>
+      <div class="nav-item" data-pane="hosts" onclick="showPane('hosts')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        <span class="nav-label">Hosts</span>
+      </div>
 
-    <div class="panel">
-      <h2>PHP version</h2>
-      <select id="php-select">
-        <option value="php81">PHP 8.1</option>
-        <option value="php82">PHP 8.2</option>
-        <option value="php83">PHP 8.3</option>
-      </select>
-      <button onclick="switchPhp()">Switch</button>
-    </div>
+      <div class="nav-section-title">Servers</div>
+      <div class="nav-item" data-pane="caddy" data-service="caddy" onclick="showPane('caddy')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+        <span class="nav-label">Web Server</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="caddy" onchange="onToggle('caddy', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="php" data-service="php-active" onclick="showPane('php')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+        <span class="nav-label">PHP</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="php-active" onchange="onToggle('php-active', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="mysql" data-service="mariadb" onclick="showPane('mysql')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        <span class="nav-label">MySQL</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="mariadb" onchange="onToggle('mariadb', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="postgres" data-service="postgres" onclick="showPane('postgres')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        <span class="nav-label">PostgreSQL</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="postgres" onchange="onToggle('postgres', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="mailpit" data-service="mailpit" onclick="showPane('mailpit')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <span class="nav-label">Mailpit</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="mailpit" onchange="onToggle('mailpit', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="adminer" data-service="adminer" onclick="showPane('adminer')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span class="nav-label">Adminer</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="adminer" onchange="onToggle('adminer', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="phpmyadmin" data-service="phpmyadmin" onclick="showPane('phpmyadmin')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span class="nav-label">phpMyAdmin</span>
+        <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" data-toggle="phpmyadmin" onchange="onToggle('phpmyadmin', this)"><span class="slider"></span></label>
+      </div>
+      <div class="nav-item" data-pane="ssl" onclick="showPane('ssl')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span class="nav-label">SSL Tools</span>
+      </div>
+    </aside>
 
-    <div class="panel">
-      <h2>Hosts</h2>
-      <div id="hosts"></div>
-      <div class="create-row">
-        <input type="text" id="new-host-name" placeholder="myproject (becomes myproject.localhost)">
-        <button onclick="createHost()">Create</button>
+    <main class="content-area">
+      <!-- Overview -->
+      <div class="pane active" id="pane-overview">
+        <div class="pane-header"><div><h2>Overview</h2><p>Real-time service status.</p></div></div>
+        <div class="card">
+          <h3>Performance</h3>
+          <div id="perf-list"></div>
+        </div>
+        <div class="card">
+          <h3>Activity Log</h3>
+          <div class="terminal" id="terminal-output">
+            <div class="line">Welcome to JengaDev by Core Mtaalam Technologies.</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <h3>Share Dashboard Access</h3>
+          <p style="margin:0 0 12px; color:var(--muted); font-size:0.9rem;">Open this link once on another browser or device to authenticate it too - no SSH access needed. Keep it private, anyone with this link can control this JengaDev install.</p>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="share-link" readonly style="flex:1; font-family:ui-monospace,Consolas,monospace; font-size:0.82rem;">
+            <button onclick="copyShareLink()">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hosts -->
+      <div class="pane" id="pane-hosts">
+        <div class="pane-header"><div><h2>Hosts</h2><p>Manage your local development domains.</p></div></div>
+        <div class="split-pane">
+          <div class="split-master">
+            <div class="master-header">
+              <span>Hosts</span>
+              <button class="secondary" onclick="showNewHostModal()" style="padding:3px 10px; font-size:1rem; line-height:1;">+</button>
+            </div>
+            <div id="hosts-master-list" style="flex:1; overflow-y:auto;"></div>
+          </div>
+          <div class="split-detail" id="host-detail-view">
+            <div id="host-detail-empty" style="color:var(--muted); padding:20px 0;">Select a host on the left to see its details.</div>
+            <div id="host-detail-content" style="display:none;">
+              <h3 id="detail-host-name" style="margin-bottom:20px; font-size:1.3rem;"></h3>
+              <div class="setting-row"><label>Domain</label><span><a id="detail-host-url" href="#" target="_blank" style="color:var(--accent); text-decoration:none;"></a></span></div>
+              <div class="setting-row"><label>Document Root</label><span id="detail-host-path" style="font-size:0.85rem;"></span></div>
+              <div class="setting-row"><label>Size</label><span id="detail-host-size" style="font-weight:600;"></span></div>
+              <div class="setting-row"><label>Technology Stack</label><span id="detail-host-stack" style="display:flex; gap:6px;"></span></div>
+              <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                  <label>SQLite Databases</label>
+                  <button class="secondary" onclick="promptCreateSqlite()" style="padding:5px 12px; font-size:0.8rem;">+ New DB</button>
+                </div>
+                <div id="detail-host-sqlite-list" style="width:100%;"></div>
+              </div>
+              <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="secondary" onclick="openHostInBrowser()">Open in Browser</button>
+                <button class="danger" style="margin-left:auto;" onclick="deleteHostFromDetail()">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Caddy -->
+      <div class="pane" id="pane-caddy">
+        <div class="pane-header">
+          <div><h2>Web Server (Caddy)</h2><p>Auto-HTTPS & reverse proxy.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-caddy">Stopped</span>
+            <button id="toggle-caddy" onclick="toggleFromPane('caddy')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Configuration</h3>
+          <div class="setting-row"><label>Ports</label><span>80, 443</span></div>
+          <div class="setting-row"><label>Auto HTTPS</label><span>Enabled (local certs)</span></div>
+          <div class="setting-row"><label>Config file</label><span>config/Caddyfile</span></div>
+        </div>
+      </div>
+
+      <!-- PHP -->
+      <div class="pane" id="pane-php">
+        <div class="pane-header">
+          <div><h2>PHP</h2><p>FastCGI Process Manager, one container per version.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-php-active">Stopped</span>
+            <button id="toggle-php-active" onclick="toggleFromPane('php-active')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Active version</h3>
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">New hosts are routed to whichever version is active here.</p>
+          <div style="display:flex; gap:10px;">
+            <select id="php-select" style="flex:1;">
+              <option value="php81">PHP 8.1</option>
+              <option value="php82">PHP 8.2</option>
+              <option value="php83">PHP 8.3</option>
+            </select>
+            <button onclick="switchPhp()">Switch</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>php.ini Configuration</h3>
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">Applies to whichever version is active. Saving restarts it if running.</p>
+          <div class="setting-row"><label>Memory Limit</label><input type="text" id="php-cfg-memory_limit" style="width:120px;"></div>
+          <div class="setting-row"><label>Max Execution Time (s)</label><input type="text" id="php-cfg-max_execution_time" style="width:120px;"></div>
+          <div class="setting-row"><label>Upload Max Filesize</label><input type="text" id="php-cfg-upload_max_filesize" style="width:120px;"></div>
+          <div class="setting-row"><label>Post Max Size</label><input type="text" id="php-cfg-post_max_size" style="width:120px;"></div>
+          <div style="margin-top:15px; display:flex; justify-content:flex-end;">
+            <button onclick="savePhpConfig()">Save Configuration & Restart</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <h3>Extensions</h3>
+          <p style="margin:0 0 12px; color:var(--muted); font-size:0.9rem;">Compiled into every PHP image at build time, same set for all three versions - unlike a native install, there's no per-extension on/off switch without rebuilding the image.</p>
+          <div id="php-extensions-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- MySQL -->
+      <div class="pane" id="pane-mysql">
+        <div class="pane-header">
+          <div><h2>MySQL (MariaDB)</h2><p>Relational database engine.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-mariadb">Stopped</span>
+            <button id="toggle-mariadb" onclick="toggleFromPane('mariadb')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Connection</h3>
+          <div class="setting-row"><label>Host</label><span id="conn-host-mysql">-</span></div>
+          <div class="setting-row"><label>Port</label><span>3306</span></div>
+          <div class="setting-row"><label>User</label><span>root</span></div>
+          <div class="setting-row"><label>Password</label><span>see .env (MYSQL_ROOT_PASSWORD)</span></div>
+        </div>
+        <div class="card">
+          <h3>my.cnf Configuration</h3>
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">Saving restarts MariaDB if it's running.</p>
+          <div class="setting-row"><label>Max Allowed Packet</label><input type="text" id="mysql-cfg-max_allowed_packet" style="width:120px;"></div>
+          <div class="setting-row"><label>InnoDB Buffer Pool Size</label><input type="text" id="mysql-cfg-innodb_buffer_pool_size" style="width:120px;"></div>
+          <div style="margin-top:15px; display:flex; justify-content:flex-end;">
+            <button onclick="saveMysqlConfig()">Save Configuration & Restart</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <h3>Database Users</h3>
+          <div id="mysql-users-list"></div>
+          <div class="create-row">
+            <input type="text" id="mysql-new-username" placeholder="Username">
+            <input type="text" id="mysql-new-password" placeholder="Password">
+            <button onclick="createDbUser('mysql')">Create User</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PostgreSQL -->
+      <div class="pane" id="pane-postgres">
+        <div class="pane-header">
+          <div><h2>PostgreSQL</h2><p>Enterprise-class open source database.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-postgres">Stopped</span>
+            <button id="toggle-postgres" onclick="toggleFromPane('postgres')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Connection</h3>
+          <div class="setting-row"><label>Host</label><span id="conn-host-postgres">-</span></div>
+          <div class="setting-row"><label>Port</label><span>5432</span></div>
+          <div class="setting-row"><label>User</label><span>postgres</span></div>
+          <div class="setting-row"><label>Password</label><span>see .env (POSTGRES_PASSWORD)</span></div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <h3>Database Users</h3>
+          <div id="postgres-users-list"></div>
+          <div class="create-row">
+            <input type="text" id="postgres-new-username" placeholder="Username">
+            <input type="text" id="postgres-new-password" placeholder="Password">
+            <button onclick="createDbUser('postgres')">Create User</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mailpit -->
+      <div class="pane" id="pane-mailpit">
+        <div class="pane-header">
+          <div><h2>Mailpit</h2><p>Catches outbound mail from your apps so you can inspect it.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-mailpit">Stopped</span>
+            <button id="toggle-mailpit" onclick="toggleFromPane('mailpit')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Configuration</h3>
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">Username/password are optional - leave both blank to keep accepting mail with no SMTP auth. Saving restarts Mailpit if it's running.</p>
+          <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:220px;">
+              <div class="setting-row"><label>SMTP Port</label><input type="text" id="mailpit-cfg-smtp_port" style="width:100px;"></div>
+              <div class="setting-row"><label>Web UI Port</label><input type="text" id="mailpit-cfg-web_port" style="width:100px;"></div>
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <div class="setting-row"><label>SMTP Username</label><input type="text" id="mailpit-cfg-auth_user" placeholder="optional" style="width:140px;"></div>
+              <div class="setting-row"><label>SMTP Password</label><input type="text" id="mailpit-cfg-auth_pass" placeholder="optional" style="width:140px;"></div>
+            </div>
+          </div>
+          <div style="margin-top:15px; display:flex; justify-content:flex-end;">
+            <button onclick="saveMailpitConfig()">Save & Apply</button>
+          </div>
+        </div>
+        <div class="iframe-wrap"><iframe id="mailpit-iframe" src="about:blank"></iframe></div>
+      </div>
+
+      <!-- Adminer -->
+      <div class="pane" id="pane-adminer">
+        <div class="pane-header">
+          <div><h2>Adminer</h2><p>Lightweight database browser for MySQL and PostgreSQL.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-adminer">Stopped</span>
+            <button id="toggle-adminer" onclick="toggleFromPane('adminer')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">Adminer blocks being embedded in another page (it sends X-Frame-Options: deny), so it opens in its own tab instead.</p>
+          <a class="btn" id="open-adminer" href="#" target="_blank">Open Adminer</a>
+        </div>
+      </div>
+
+      <!-- phpMyAdmin -->
+      <div class="pane" id="pane-phpmyadmin">
+        <div class="pane-header">
+          <div><h2>phpMyAdmin</h2><p>Full-featured MySQL/MariaDB administration tool.</p></div>
+          <div class="pane-actions">
+            <span class="status-badge stopped" id="badge-phpmyadmin">Stopped</span>
+            <button id="toggle-phpmyadmin" onclick="toggleFromPane('phpmyadmin')">Start</button>
+          </div>
+        </div>
+        <div class="card">
+          <p style="margin:0 0 15px; color:var(--muted); font-size:0.9rem;">phpMyAdmin blocks being embedded in another page (it sends X-Frame-Options: deny), so it opens in its own tab instead.</p>
+          <a class="btn" id="open-phpmyadmin" href="#" target="_blank">Open phpMyAdmin</a>
+        </div>
+      </div>
+
+      <!-- SSL Tools -->
+      <div class="pane" id="pane-ssl">
+        <div class="pane-header">
+          <div><h2>SSL Tools</h2></div>
+        </div>
+        <div class="ssl-info-banner">
+          <strong>How it works:</strong> Generate a CSR &rarr; download and send to your CA (e.g. DigiCert, ZeroSSL) &rarr; upload the signed certificate back &rarr; it will be available for use in Caddy. To renew, click Renew on an active cert &rarr; a fresh CSR is generated with the same domain details.
+          <br><span style="color:var(--muted);">Note: Caddy already auto-issues local HTTPS for every host below with no setup at all - this is only needed for a cert from a real external CA.</span>
+        </div>
+        <div class="card" style="padding:0; overflow:hidden; margin-bottom:0;">
+          <table class="ssl-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Common Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Expires</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ssl-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- New Host modal -->
+  <div id="new-host-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom:15px;">Create Virtual Host</h3>
+      <p style="margin-bottom:12px; color:var(--muted); font-size:0.9rem;">Creates a new folder under <code>www/</code> and maps it to a <code>.localhost</code> domain (or use a name with a dot for a custom domain).</p>
+      <input type="text" id="new-host-name" placeholder="myproject (becomes myproject.localhost)" style="width:100%;">
+      <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="secondary" onclick="closeModal('new-host-modal')">Cancel</button>
+        <button onclick="createHost()">Create Host</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generate CSR modal -->
+  <div id="csr-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom:15px;">Generate CSR for <span id="csr-domain-display"></span></h3>
+      <input type="hidden" id="csr-domain">
+      <div class="setting-row"><label>Organization</label><input type="text" id="csr-organization" placeholder="My Company"></div>
+      <div class="setting-row"><label>Email</label><input type="text" id="csr-email" placeholder="admin@example.com"></div>
+      <div class="setting-row"><label>Country (2-letter)</label><input type="text" id="csr-country" placeholder="US" maxlength="2" style="width:60px;"></div>
+      <div class="setting-row"><label>State</label><input type="text" id="csr-state" placeholder="California"></div>
+      <div class="setting-row"><label>City</label><input type="text" id="csr-locality" placeholder="San Francisco"></div>
+      <div id="csr-result" style="display:none; margin-top:15px;">
+        <label style="color:var(--muted); font-size:0.85rem;">CSR (copy and send to your CA)</label>
+        <textarea id="csr-output" rows="8" readonly style="width:100%; font-family:ui-monospace,Consolas,monospace; font-size:0.78rem; background:var(--bg); color:var(--ink); border:1px solid var(--card-border); border-radius:6px; margin-top:6px;"></textarea>
+        <p style="margin-top:8px; color:var(--muted); font-size:0.82rem;">The matching private key was generated and stored on this server - it isn't shown here.</p>
+      </div>
+      <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="secondary" onclick="closeModal('csr-modal')">Close</button>
+        <button id="csr-generate-btn" onclick="submitGenerateCsr()">Generate CSR & Private Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload certificate modal -->
+  <div id="upload-cert-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 style="margin-bottom:15px;">Upload Signed Certificate for <span id="upload-domain-display"></span></h3>
+      <input type="hidden" id="upload-domain">
+      <p style="margin-bottom:10px; color:var(--muted); font-size:0.9rem;">Paste the certificate your CA issued (include any CA bundle if provided). It's paired with the private key already generated for this domain.</p>
+      <textarea id="upload-cert-text" rows="10" placeholder="-----BEGIN CERTIFICATE-----" style="width:100%; font-family:ui-monospace,Consolas,monospace; font-size:0.78rem; background:var(--bg); color:var(--ink); border:1px solid var(--card-border); border-radius:6px;"></textarea>
+      <div style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
+        <button class="secondary" onclick="closeModal('upload-cert-modal')">Close</button>
+        <button onclick="submitUploadCert()">Activate SSL</button>
       </div>
     </div>
   </div>

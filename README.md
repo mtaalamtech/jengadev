@@ -1,11 +1,12 @@
 # JengaDev
 
-**A portable, zero-config local dev server for Windows.** Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit, managed from one browser dashboard — with automatic local HTTPS out of the box.
+**A portable, zero-config local dev server for Windows and Linux.** Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit, managed from one browser dashboard — with automatic local HTTPS out of the box.
 
 [![Latest release](https://img.shields.io/github/v/release/mtaalamtech/jengadev?label=latest)](https://github.com/mtaalamtech/jengadev/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/mtaalamtech/jengadev/total?label=downloads)](https://github.com/mtaalamtech/jengadev/releases)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6.svg)
+![Platform: Linux](https://img.shields.io/badge/platform-Linux-FCC624.svg)
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/mtaalamtech/jengadev/releases/latest)
 
@@ -21,7 +22,7 @@ JengaDev gives you both for free, out of the box:
 | Mail catcher | **Built in (Mailpit)** |
 | Databases | MySQL/MariaDB + PostgreSQL + SQLite |
 | Control surface | Browser dashboard |
-| Platforms | Windows(Other platforms Coming) |
+| Platforms | Windows, Linux |
 
 ## Features
 
@@ -35,9 +36,23 @@ JengaDev gives you both for free, out of the box:
 
 ## Installation
 
+### Windows
+
 1. Download the latest `JengaDev_Setup_Full_*.exe` from [Releases](https://github.com/mtaalamtech/jengadev/releases).
 2. Run it (it requests admin rights once, to install services and secure its own install folder).
 3. JengaDev starts and opens its dashboard automatically.
+
+### Linux
+
+Docker-based — Caddy, PHP, MariaDB, PostgreSQL, Mailpit, Adminer, and phpMyAdmin run as containers (prebuilt images, nothing compiles locally), and the daemon itself is a single compiled binary with no other dependencies.
+
+```bash
+git clone https://github.com/mtaalamtech/jengadev.git
+cd jengadev/linux
+./install.sh
+```
+
+Requires only Docker (the script installs it for you on Debian/Ubuntu and Fedora/RHEL if it's missing) - no Node.js, no local builds. The dashboard is reachable at `http://127.0.0.1:4000` and, since Linux dev boxes are often headless servers rather than desktops, over the LAN too; `install.sh` prints both tokenized links when it finishes.
 
 ## Security
 
@@ -45,11 +60,11 @@ JengaDev went through a structured security review before this repository went p
 
 ## Third-party components
 
-JengaDev bundles or downloads Caddy, PHP, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, and Node.js, each under its own license, plus a set of permissively-licensed npm packages. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for the full list.
+On Windows, JengaDev bundles or downloads Caddy, PHP, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, and Node.js, each under its own license, plus a set of permissively-licensed npm packages. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for the full list. On Linux, those same components run as official upstream Docker images instead of bundled binaries - see each image's own listing on Docker Hub/GHCR for its license.
 
 ## License
 
-JengaDev's own source code (`daemon/` and `dashboard/`) is licensed under the [MIT License](LICENSE). Bundled third-party components keep their own licenses.
+JengaDev's own source code (`daemon/`/`dashboard/` for Windows, `linux/daemon/`/`linux/dashboard/` for Linux) is licensed under the [MIT License](LICENSE). Bundled or containerized third-party components keep their own licenses.
 
 ---
 
