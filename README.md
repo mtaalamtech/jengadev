@@ -9,6 +9,7 @@
 ![Platform: Linux](https://img.shields.io/badge/platform-Linux-FCC624.svg)
 
 [![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D6?style=for-the-badge&logo=windows)](https://github.com/mtaalamtech/jengadev/releases/latest)
+[![Get it for Linux](https://img.shields.io/badge/Get%20it-Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](#linux)
 
 ![JengaDev dashboard overview](docs/dashboard-overview.png)
 
