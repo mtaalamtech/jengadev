@@ -1,10 +1,10 @@
 [Setup]
 AppName=JengaDev
-AppVersion=1.0.30
+AppVersion=1.0.31
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
 OutputDir=C:\Users\Admin\Desktop
-OutputBaseFilename=JengaDev_Setup_Full_v1.0.30
+OutputBaseFilename=JengaDev_Setup_Full_v1.0.31
 Compression=lzma2/ultra
 SolidCompression=yes
 SetupIconFile=C:\safuweb\nexus\JengaDev.ico
@@ -159,9 +159,17 @@ begin
   begin
     // Free up the ports before they get checked: on an upgrade, the currently
     // running JengaDev instance is still holding them, which would otherwise
-    // always fail the port-conflict check below on NextButtonClick.
-    if IsUpgrade then
-      StopJengaDevServices;
+    // always fail the port-conflict check below on NextButtonClick. This
+    // used to be gated on IsUpgrade - a real bug if that ever misdetects
+    // (IsUpgrade is just a FileExists check on {app}\JengaDev.exe; anything
+    // that makes it wrong, like the user picking a different install
+    // directory than the one they're actually running from, meant the old
+    // instance never got stopped, and the port check then correctly - but
+    // confusingly - reported ports that genuinely were still in use).
+    // Unconditional instead: stopping services that aren't running is a
+    // harmless no-op, and this is the one place that actually matters for
+    // the port check that immediately follows.
+    StopJengaDevServices;
   end;
 
   if CurPageID = wpReady then
