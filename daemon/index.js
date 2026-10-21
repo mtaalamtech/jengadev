@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.29';
+const APP_VERSION = '1.0.30';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -50,17 +50,63 @@ function escapeRegExp(string) {
 // the wire, not a compromised upstream host or a swapped release asset. This
 // streams a download to disk while hashing it, and refuses to keep the file
 // (deleting it) if the hash doesn't match what was expected.
-async function downloadWithChecksum(url, destPath, expectedSha256, extraHeaders) {
-  const res = await fetch(url, extraHeaders ? { headers: extraHeaders } : undefined);
-  if (!res.ok) throw new Error(`Download failed: HTTP ${res.status} for ${url}`);
-  const { Readable, Transform } = require('stream');
+// Root cause of downloads looking like they "buffer" forever under the
+// compiled exe, confirmed by direct instrumentation (not guessed): this
+// used to call res.on('data', ...) to feed the hash AND res.pipe(fileStream)
+// on the very same readable stream at once. Two concurrent consumers on one
+// Node stream is a real anti-pattern - it wrecks the backpressure signal
+// between the network read and the disk write, and the symptom was exactly
+// what got reported: zero bytes ever landing on disk, no error, nothing.
+// Piping through a single stream/promises `pipeline` (network -> hashing
+// Transform -> file) instead of splitting into two consumers was the actual
+// fix; confirmed by watching real byte counts arrive via an onProgress
+// callback while running the genuine compiled daemon, not just a
+// standalone test script.
+//
+// Separately, GitHub's CDN throttles this specific redirect-to-signed-URL
+// release-asset pattern hard after the first ~10-20MB (measured: ~2MB/s
+// dropping to a few hundred KB/s) - for a 500MB+ installer that's many
+// minutes with no visible progress if the caller doesn't surface it, which
+// is why onProgress exists: /api/update/apply polls this instead of
+// blocking a single request for the whole transfer.
+async function downloadWithChecksum(url, destPath, expectedSha256, extraHeaders, onProgress) {
+  const https = require('https');
+  const { Transform } = require('stream');
   const { pipeline } = require('stream/promises');
-  const hash = crypto.createHash('sha256');
-  const hasher = new Transform({
-    transform(chunk, enc, cb) { hash.update(chunk); cb(null, chunk); }
+
+  const res = await new Promise((resolve, reject) => {
+    const doRequest = (currentUrl, redirectsLeft) => {
+      https.get(currentUrl, { headers: Object.assign({ 'User-Agent': 'JengaDev' }, extraHeaders || {}) }, (response) => {
+        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+          response.resume();
+          if (redirectsLeft <= 0) { reject(new Error('Too many redirects downloading ' + url)); return; }
+          doRequest(response.headers.location, redirectsLeft - 1);
+          return;
+        }
+        if (response.statusCode !== 200) {
+          response.resume();
+          reject(new Error(`Download failed: HTTP ${response.statusCode} for ${currentUrl}`));
+          return;
+        }
+        resolve(response);
+      }).on('error', reject);
+    };
+    doRequest(url, 5);
   });
-  await pipeline(Readable.fromWeb(res.body), hasher, fs.createWriteStream(destPath));
+
+  const hash = crypto.createHash('sha256');
+  let total = 0;
+  const hasher = new Transform({
+    transform(chunk, enc, cb) {
+      hash.update(chunk);
+      total += chunk.length;
+      if (onProgress) onProgress(total);
+      cb(null, chunk);
+    }
+  });
+  await pipeline(res, hasher, fs.createWriteStream(destPath));
   const actual = hash.digest('hex');
+
   if (expectedSha256 && actual.toLowerCase() !== expectedSha256.toLowerCase()) {
     try { fs.unlinkSync(destPath); } catch (e) {}
     throw new Error(`Checksum mismatch downloading ${path.basename(destPath)}: expected ${expectedSha256}, got ${actual}. Refusing to install a file that doesn't match what was expected - the download may have been tampered with, or the upstream file changed.`);
@@ -1042,7 +1088,23 @@ app.get('/api/update/check', async (req, res) => {
     }
 });
 
+// GitHub throttles this specific release-asset download pattern hard after
+// the first ~10-20MB (measured directly: ~2MB/s dropping to a few hundred
+// KB/s) - for a 500MB+ installer that's realistically many minutes. The old
+// /api/update/apply awaited the whole download before ever responding, so
+// the dashboard button just said "Downloading & verifying..." the entire
+// time with no way to tell real multi-minute progress apart from being
+// stuck - which is exactly what got reported as "buffering forever,
+// had to download manually". This tracks progress in module state instead,
+// so /api/update/apply can return immediately once the download has
+// started, and the dashboard polls /api/update/progress for a real
+// percentage.
+let updateProgress = { phase: 'idle', bytesReceived: 0, totalBytes: 0, message: null };
+
 app.post('/api/update/apply', async (req, res) => {
+    if (updateProgress.phase === 'downloading' || updateProgress.phase === 'launching') {
+        return res.json({ success: true, message: 'Update already in progress.' });
+    }
     try {
         const repo = getUpdateRepo();
         if (!repo) return res.status(400).json({ success: false, message: 'No update feed configured' });
@@ -1058,20 +1120,36 @@ app.post('/api/update/apply', async (req, res) => {
 
         const expectedHash = (asset.digest || '').replace(/^sha256:/, '') || null;
         const installerPath = path.join(require('os').tmpdir(), asset.name);
-        await downloadWithChecksum(asset.browser_download_url, installerPath, expectedHash);
+        updateProgress = { phase: 'downloading', bytesReceived: 0, totalBytes: asset.size || 0, message: null };
 
-        res.json({ success: true, message: 'Update verified. Launching the installer - JengaDev will restart shortly.' });
+        // Respond right away - the actual transfer runs in the background,
+        // tracked through updateProgress rather than held open on this
+        // response for however many minutes it takes.
+        res.json({ success: true, message: 'Update download started.' });
 
-        // Hand off to the new installer - same UAC prompt + wizard as a manual
-        // download, never a silent replace - then gracefully stop everything on
-        // our side so its own upgrade flow can overwrite files cleanly.
-        exec(`"${installerPath}"`);
-        setTimeout(() => {
-            fetch(`http://127.0.0.1:${daemonPort}/api/quit`, { method: 'POST', headers: { 'X-JengaDev-Token': DAEMON_TOKEN } }).catch(() => {});
-        }, 1500);
+        downloadWithChecksum(asset.browser_download_url, installerPath, expectedHash, null, (bytesReceived) => {
+            updateProgress.bytesReceived = bytesReceived;
+        }).then(() => {
+            updateProgress = { phase: 'launching', bytesReceived: updateProgress.totalBytes, totalBytes: updateProgress.totalBytes, message: 'Launching the installer - JengaDev will restart shortly.' };
+            // Hand off to the new installer - same UAC prompt + wizard as a
+            // manual download, never a silent replace - then gracefully
+            // stop everything on our side so its own upgrade flow can
+            // overwrite files cleanly.
+            exec(`"${installerPath}"`);
+            setTimeout(() => {
+                fetch(`http://127.0.0.1:${daemonPort}/api/quit`, { method: 'POST', headers: { 'X-JengaDev-Token': DAEMON_TOKEN } }).catch(() => {});
+            }, 1500);
+        }).catch((err) => {
+            updateProgress = { phase: 'error', bytesReceived: 0, totalBytes: 0, message: err.message };
+        });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        updateProgress = { phase: 'error', bytesReceived: 0, totalBytes: 0, message: err.message };
+        if (!res.headersSent) res.status(500).json({ success: false, message: err.message });
     }
+});
+
+app.get('/api/update/progress', (req, res) => {
+    res.json({ success: true, ...updateProgress });
 });
 
 // Start service

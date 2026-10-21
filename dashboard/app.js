@@ -1179,15 +1179,48 @@ async function checkForUpdates() {
     } catch (e) { /* update feed unreachable - stay quiet, this isn't a user-facing error */ }
 }
 
+function formatMB(bytes) { return (bytes / (1024 * 1024)).toFixed(0); }
+
+// GitHub throttles this download hard after the first ~10-20MB, so a
+// 500MB+ installer realistically takes several minutes - polling actual
+// progress here is what tells a user that apart from it being stuck,
+// instead of a static "Downloading..." message for that whole time (which
+// is exactly what got reported as broken).
+let updateProgressTimer = null;
+async function pollUpdateProgress() {
+    try {
+        const res = await fetch(`${API_BASE}/update/progress`);
+        const p = await res.json();
+        const banner = document.getElementById('update-banner-text');
+        if (p.phase === 'downloading') {
+            const pct = p.totalBytes ? Math.min(100, Math.round(p.bytesReceived / p.totalBytes * 100)) : 0;
+            banner.textContent = p.totalBytes
+                ? `Downloading update... ${pct}% (${formatMB(p.bytesReceived)} / ${formatMB(p.totalBytes)} MB)`
+                : `Downloading update... ${formatMB(p.bytesReceived)} MB`;
+        } else if (p.phase === 'launching') {
+            banner.textContent = p.message || 'Launching the installer - JengaDev will restart shortly.';
+            clearInterval(updateProgressTimer);
+        } else if (p.phase === 'error') {
+            showToast(p.message || 'Update failed', true);
+            clearInterval(updateProgressTimer);
+            const btn = document.getElementById('btn-apply-update');
+            btn.disabled = false;
+            btn.textContent = 'Download & Install';
+        }
+    } catch (e) { /* transient poll failure - next tick will retry */ }
+}
+
 async function applyUpdate() {
     const btn = document.getElementById('btn-apply-update');
     btn.disabled = true;
-    btn.textContent = 'Downloading & verifying...';
+    btn.textContent = 'Starting download...';
     try {
         const res = await fetch(`${API_BASE}/update/apply`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             document.getElementById('update-banner-text').textContent = data.message;
+            if (updateProgressTimer) clearInterval(updateProgressTimer);
+            updateProgressTimer = setInterval(pollUpdateProgress, 1000);
         } else {
             showToast(data.message, true);
             btn.disabled = false;
