@@ -1,10 +1,10 @@
 [Setup]
 AppName=JengaDev
-AppVersion=1.0.31
+AppVersion=1.0.32
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
 OutputDir=C:\Users\Admin\Desktop
-OutputBaseFilename=JengaDev_Setup_Full_v1.0.31
+OutputBaseFilename=JengaDev_Setup_Full_v1.0.32
 Compression=lzma2/ultra
 SolidCompression=yes
 SetupIconFile=C:\safuweb\nexus\JengaDev.ico
