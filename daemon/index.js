@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.28';
+const APP_VERSION = '1.0.29';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -1977,7 +1977,7 @@ app.get('/api/dialog/open-file', (req, res) => {
 
 
 const daemonPort = getConfig().ports.daemon || 4000;
-app.listen(daemonPort, '127.0.0.1', () => {
+const serverInstance = app.listen(daemonPort, '127.0.0.1', () => {
   setupInitialConfig();
   console.log(`JengaDev Daemon running at http://127.0.0.1:${daemonPort}`);
 
@@ -2015,5 +2015,23 @@ app.listen(daemonPort, '127.0.0.1', () => {
         services.forEach(startService);
       });
     } catch(e) {}
+  }
+});
+
+// An unhandled 'error' event on a net.Server throws and crashes the whole
+// process - normally invisible since JengaDev.exe runs with no console, so
+// a double-launch (another copy already bound to this port) used to just
+// vanish with no explanation instead of the tray app's kill-first startup
+// logic ever getting a chance to help. EADDRINUSE specifically means
+// another instance is already up and serving, so the right move is just to
+// open the dashboard it's already running and exit quietly.
+serverInstance.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    if (!process.argv.includes('--silent')) {
+      try { exec(`start "" "http://127.0.0.1:${daemonPort}/?token=${DAEMON_TOKEN}"`); } catch (e) {}
+    }
+    process.exit(0);
+  } else {
+    throw err;
   }
 });
