@@ -3,8 +3,29 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Net;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
+
+// A brand-new, unsigned exe with no PE version metadata at all (no company,
+// product, or description - just a bare icon) is itself a weak signal some
+// AV heuristics weigh when deciding whether something "looks like" a
+// dropper, on top of the real behavioral trigger: this spawns another
+// hidden process (JengaDev.exe) and registers a tray-only window, which is
+// a legitimate and extremely common pattern (every tray-icon app does the
+// window registration; plenty of legitimate updater/launcher tools spawn a
+// hidden child), but also happens to overlap with how actual malware
+// behaves. This metadata alone doesn't fix AV false positives - code
+// signing is the real, durable fix for that, and isn't something to do
+// unilaterally - but it's a free, in-our-control improvement that helps
+// both static scanners and a human looking at file properties.
+[assembly: AssemblyTitle("JengaDev")]
+[assembly: AssemblyDescription("JengaDev tray launcher - starts and manages the JengaDev local dev server daemon")]
+[assembly: AssemblyCompany("Core Mtaalam Technologies")]
+[assembly: AssemblyProduct("JengaDev")]
+[assembly: AssemblyCopyright("Copyright © Core Mtaalam Technologies")]
+[assembly: AssemblyVersion("1.0.32.0")]
+[assembly: AssemblyFileVersion("1.0.32.0")]
 
 namespace JengaDevTrayApp
 {

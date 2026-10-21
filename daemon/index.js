@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.31';
+const APP_VERSION = '1.0.32';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -219,6 +219,43 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
+// Minimal cookie reader (res.cookie() for writing is already built into
+// Express - this is only for reading req.headers.cookie back out, same
+// pattern as the Linux build).
+function parseCookies(req) {
+  const header = req.headers.cookie;
+  const out = {};
+  if (!header) return out;
+  for (const pair of header.split(';')) {
+    const idx = pair.indexOf('=');
+    if (idx === -1) continue;
+    out[pair.slice(0, idx).trim()] = decodeURIComponent(pair.slice(idx + 1).trim());
+  }
+  return out;
+}
+function hasValidToken(req) {
+  if (req.headers['x-jengadev-token'] === DAEMON_TOKEN) return true;
+  if (req.query.token === DAEMON_TOKEN) return true;
+  return parseCookies(req).jd_token === DAEMON_TOKEN;
+}
+
+// The dashboard's own fetch() wrapper only ever reads the token from
+// sessionStorage, which is scoped per-tab, not even shared between two
+// tabs of the same browser - so opening the dashboard in a second tab (or
+// a second browser the auto-launch didn't hand a ?token= link to) always
+// 401'd every API call with no way back in short of the tray icon. A
+// long-lived cookie, set here the moment a valid token shows up in the
+// URL, fixes the same-browser case (cookies persist across tabs and
+// reloads, sessionStorage doesn't) - a genuinely different browser still
+// needs the token at least once, which is unavoidable with any token
+// scheme, but that's now the only case left.
+app.get('/', (req, res, next) => {
+  if (req.query.token === DAEMON_TOKEN) {
+    res.cookie('jd_token', DAEMON_TOKEN, { maxAge: 365 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+  }
+  next();
+});
+
 // Serve the dashboard statically
 app.use('/', express.static(path.join(appRoot, 'dashboard'), {
     setHeaders: (res, path) => {
@@ -232,8 +269,7 @@ app.use('/', express.static(path.join(appRoot, 'dashboard'), {
 // nothing sensitive in it), but every actual API call does - this is the
 // control plane for spawning processes, databases and the filesystem.
 app.use('/api', (req, res, next) => {
-  const supplied = req.headers['x-jengadev-token'] || req.query.token;
-  if (supplied === DAEMON_TOKEN) return next();
+  if (hasValidToken(req)) return next();
   res.status(401).json({ success: false, message: 'Missing or invalid daemon token. Reopen JengaDev from its app icon to get an authenticated session.' });
 });
 
