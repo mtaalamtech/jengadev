@@ -76,10 +76,18 @@ const saveConfig = (c) => fs.writeFileSync(configPath, JSON.stringify(c, null, 2
 // from another LAN device is an intentional feature, not an oversight;
 // setting it false restricts Caddy - and everything reachable through it,
 // including PHP - to this machine only.
+// install.sh also writes to this file (POSTGRES_PASSWORD, generated once
+// on first run) - overwriting it outright would wipe that out and break
+// Postgres on its next recreate, so this only ever touches the
+// CADDY_BIND_ADDR line, preserving every other line as-is.
 const envPath = path.join(appRoot, '.env');
 function rebuildEnvFile() {
   const bindAddr = getConfig().expose_lan ? '0.0.0.0' : '127.0.0.1';
-  fs.writeFileSync(envPath, `CADDY_BIND_ADDR=${bindAddr}\n`);
+  const lines = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, 'utf8').split('\n').filter(l => l.trim() && !l.startsWith('CADDY_BIND_ADDR='))
+    : [];
+  lines.push(`CADDY_BIND_ADDR=${bindAddr}`);
+  fs.writeFileSync(envPath, lines.join('\n') + '\n');
 }
 
 // --- Auth token (same model as Windows: per-install token, file-permission
