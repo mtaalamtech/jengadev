@@ -646,7 +646,40 @@ function copyShareLink() {
   }
 }
 
+// --- Network exposure ---
+async function initLanExposure() {
+  try {
+    const res = await fetch(`${API_BASE}/network/lan-exposure`);
+    const data = await res.json();
+    document.getElementById('lan-exposure-toggle').checked = !!data.expose_lan;
+  } catch (e) { console.error(e); }
+}
+
+async function setLanExposure(enabled) {
+  const toggle = document.getElementById('lan-exposure-toggle');
+  toggle.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/network/lan-exposure`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(enabled ? 'Caddy is now reachable from the LAN' : 'Caddy restricted to this machine only', false);
+    } else {
+      showToast(data.message || 'Failed to change network exposure', true);
+      toggle.checked = !enabled;
+    }
+  } catch (e) {
+    showToast('Failed to change network exposure', true);
+    toggle.checked = !enabled;
+  }
+  toggle.disabled = false;
+}
+
 fetchStatus();
 fetchHosts();
 initShareLink();
+initLanExposure();
 setInterval(fetchStatus, 3000);

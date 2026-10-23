@@ -47,6 +47,15 @@ class DockerManager {
     return { success: result.success, message: result.success ? `${service} restarted` : `Failed to restart ${service}: ${result.stderr || result.error}` };
   }
 
+  // Port bindings are a container-creation-time setting, not something a
+  // plain `restart` re-reads - changing the .env-driven bind address needs
+  // this instead, so the running container actually picks up the new port
+  // mapping rather than just restarting with the old one.
+  async recreate(service) {
+    const result = await this._run(`up -d --force-recreate ${service}`, 60000);
+    return { success: result.success, message: result.success ? `${service} recreated` : `Failed to recreate ${service}: ${result.stderr || result.error}` };
+  }
+
   async logs(service, tail = 200) {
     const result = await this._run(`logs --no-color --tail ${tail} ${service}`);
     return result.success ? result.stdout : (result.stderr || result.error || '');

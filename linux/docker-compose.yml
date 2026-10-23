@@ -17,9 +17,17 @@ services:
     container_name: jengadev_caddy
     restart: unless-stopped
     profiles: ["services"]
+    # Unset/empty CADDY_BIND_ADDR (the default) binds 0.0.0.0 - every
+    # interface, including the LAN - on purpose: testing a site from
+    # another device on the same network is a deliberate feature here, not
+    # an oversight. That also means anything PHP-reachable through Caddy is
+    # reachable from the LAN by default, which matters a lot for something
+    # like CVE-2026-109618/CVE-2026-109619 (unauthenticated PHP RCE) - set
+    # CADDY_BIND_ADDR=127.0.0.1 in .env (the dashboard's Web Server pane has
+    # a toggle for this) to restrict it to this machine only.
     ports:
-      - "80:80"
-      - "443:443"
+      - "${CADDY_BIND_ADDR:-0.0.0.0}:80:80"
+      - "${CADDY_BIND_ADDR:-0.0.0.0}:443:443"
     volumes:
       - ./config/Caddyfile:/etc/caddy/Caddyfile
       - ./www:/var/www

@@ -291,6 +291,17 @@
           <div class="setting-row"><label>Auto HTTPS</label><span>Enabled (local certs)</span></div>
           <div class="setting-row"><label>Config file</label><span>config/Caddyfile</span></div>
         </div>
+        <div class="card">
+          <h3>Network Exposure</h3>
+          <p style="margin:0 0 12px; color:var(--muted); font-size:0.9rem;">By default Caddy (and everything served through it, including PHP) is reachable from any device on your LAN, not just this machine - useful for testing from a phone or another computer, but it also means anyone on the same network can reach your sites. Turn this off to restrict access to this machine only.</p>
+          <div class="setting-row">
+            <label>Allow access from other devices on the LAN</label>
+            <label class="switch">
+              <input type="checkbox" id="lan-exposure-toggle" onchange="setLanExposure(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- PHP -->

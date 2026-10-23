@@ -60,13 +60,27 @@ const docker = new DockerManager(appRoot);
 
 // --- Config ---
 const getConfig = () => {
-  const defaults = { active_php: 'php83', update_repo: null };
+  const defaults = { active_php: 'php83', update_repo: null, expose_lan: true };
   if (fs.existsSync(configPath)) {
     try { return { ...defaults, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) }; } catch (e) {}
   }
   return defaults;
 };
 const saveConfig = (c) => fs.writeFileSync(configPath, JSON.stringify(c, null, 2));
+
+// docker-compose.yml reads CADDY_BIND_ADDR from a .env file in the same
+// directory for its port bindings - this is the only way to change a
+// container's published port without recreating it, and compose only
+// picks up .env at that point, not from this process's own environment.
+// expose_lan defaults to true (0.0.0.0, every interface) since testing
+// from another LAN device is an intentional feature, not an oversight;
+// setting it false restricts Caddy - and everything reachable through it,
+// including PHP - to this machine only.
+const envPath = path.join(appRoot, '.env');
+function rebuildEnvFile() {
+  const bindAddr = getConfig().expose_lan ? '0.0.0.0' : '127.0.0.1';
+  fs.writeFileSync(envPath, `CADDY_BIND_ADDR=${bindAddr}\n`);
+}
 
 // --- Auth token (same model as Windows: per-install token, file-permission
 // restricted instead of icacls - chmod 600 is the Linux equivalent) ---
@@ -225,6 +239,27 @@ ${tlsLine}\troot * /var/www/${folder}
   });
 }
 rebuildCaddyfile();
+rebuildEnvFile();
+
+// --- Network exposure (Caddy bind address) ---
+app.get('/api/network/lan-exposure', (req, res) => {
+  res.json({ success: true, expose_lan: getConfig().expose_lan });
+});
+
+app.post('/api/network/lan-exposure', async (req, res) => {
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'enabled must be true or false' });
+  }
+  const config = getConfig();
+  config.expose_lan = enabled;
+  saveConfig(config);
+  rebuildEnvFile();
+
+  const status = await docker.status(SERVICES);
+  if (status.caddy === 'running') await docker.recreate('caddy');
+  res.json({ success: true, expose_lan: enabled });
+});
 
 // --- Per-host PHP error logs ---
 // All hosts on a given PHP version share one php-fpm pool, so there's no
