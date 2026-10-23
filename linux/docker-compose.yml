@@ -28,22 +28,13 @@ services:
       - caddy_config:/config
       - ./logs:/var/log/jengadev
 
-  php81:
-    # Prebuilt and pushed to GHCR (see php/Dockerfile for the source - a
-    # local build took 4+ minutes per version on real hardware, which was
-    # a bad first-run experience for something meant to be "as simple as
-    # possible"). Rebuild+push with: docker build --build-arg
-    # PHP_VERSION=8.1 -t ghcr.io/mtaalamtech/jengadev-php:8.1 ./php
-    image: ghcr.io/mtaalamtech/jengadev-php:8.1
-    container_name: jengadev_php81
-    restart: unless-stopped
-    profiles: ["services"]
-    volumes:
-      - ./www:/var/www
-      - ./logs/php:/var/log/jengadev-php
-      - ./config/php_error_router.php:/etc/jengadev/php_error_router.php:ro
-      - ./config/php-error-router.ini:/usr/local/etc/php/conf.d/99-jengadev.ini:ro
-
+  # PHP 8.1 used to be offered here too. Dropped: it's vulnerable to
+  # CVE-2026-109618/CVE-2026-109619 (PHP2Shell, an unauthenticated RCE pair,
+  # CVSS 9.2) and upstream PHP has stated 8.1 will never get a backported
+  # fix - there's no patched base image to rebuild this against. Existing
+  # php81 projects need to move to php82 or php83.
+  # Rebuild+push the remaining images with: docker build --build-arg
+  # PHP_VERSION=8.2 -t ghcr.io/mtaalamtech/jengadev-php:8.2 ./php (and 8.3)
   php82:
     image: ghcr.io/mtaalamtech/jengadev-php:8.2
     container_name: jengadev_php82

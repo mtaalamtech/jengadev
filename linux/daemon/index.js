@@ -55,7 +55,7 @@ function saveSslState(state) { fs.writeFileSync(sslStatePath, JSON.stringify(sta
 // this fix existed.
 try { fs.chmodSync(path.join(logsDir, 'php'), 0o777); } catch (e) {}
 
-const SERVICES = ['caddy', 'php81', 'php82', 'php83', 'mariadb', 'postgres', 'mailpit', 'adminer', 'phpmyadmin'];
+const SERVICES = ['caddy', 'php82', 'php83', 'mariadb', 'postgres', 'mailpit', 'adminer', 'phpmyadmin'];
 const docker = new DockerManager(appRoot);
 
 // --- Config ---
@@ -500,8 +500,8 @@ app.get('/api/logs/:service', async (req, res) => {
 
 // --- PHP version switching ---
 app.post('/api/php/switch', async (req, res) => {
-  const { version } = req.body; // 'php81' | 'php82' | 'php83'
-  if (!['php81', 'php82', 'php83'].includes(version)) {
+  const { version } = req.body; // 'php82' | 'php83'
+  if (!['php82', 'php83'].includes(version)) {
     return res.status(400).json({ success: false, message: 'Invalid PHP version' });
   }
   const config = getConfig();

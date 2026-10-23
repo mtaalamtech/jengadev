@@ -22,7 +22,7 @@ const API_BASE = window.location.origin + '/api';
   };
 })();
 
-const SERVICE_LABELS = { caddy: 'Caddy', php81: 'PHP 8.1', php82: 'PHP 8.2', php83: 'PHP 8.3', mariadb: 'MySQL (MariaDB)', postgres: 'PostgreSQL', mailpit: 'Mailpit', adminer: 'Adminer', phpmyadmin: 'phpMyAdmin' };
+const SERVICE_LABELS = { caddy: 'Caddy', php82: 'PHP 8.2', php83: 'PHP 8.3', mariadb: 'MySQL (MariaDB)', postgres: 'PostgreSQL', mailpit: 'Mailpit', adminer: 'Adminer', phpmyadmin: 'phpMyAdmin' };
 // Toolbar indicators + overview performance list, in display order. 'php'
 // here always means "whichever php8x version is currently active" - Caddy
 // only ever routes to one PHP version at a time, so that's the one users

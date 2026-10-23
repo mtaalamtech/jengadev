@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.33';
+const APP_VERSION = '1.0.34';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -649,15 +649,18 @@ app.post('/api/php/switch', (req, res) => {
 // hand it ANY url, downloaded straight into bin/ and later run as php-cgi.exe
 // via /api/php/switch. Pin the exact known-good URLs, each to the exact file
 // it points at right now (sha256), and refuse anything that isn't one of them.
+// php-8.3.4, php-8.2.16, php-8.1.27 and php-7.4.33 used to be offered here.
+// All four are vulnerable to CVE-2026-109618/CVE-2026-109619 (PHP2Shell, an
+// unauthenticated RCE pair, CVSS 9.2) - the 8.1 and 7.4 lines are pulled
+// outright since upstream PHP has stated neither will ever get a backported
+// fix (8.1 reached its own general EOL before this CVE even existed), so
+// there's no patched version to point them at. 8.3 and 8.2 are repinned to
+// their fixed releases.
 const KNOWN_PHP_BUILDS = {
-  'https://windows.php.net/downloads/releases/archives/php-8.3.4-nts-Win32-vs16-x64.zip':
-    { versionFolder: 'php-8.3.4', sha256: '79408281569f4c7faba23f415a281e0ae0bfbbfc16e72206e084ba2ef26e397a' },
-  'https://windows.php.net/downloads/releases/archives/php-8.2.16-nts-Win32-vs16-x64.zip':
-    { versionFolder: 'php-8.2.16', sha256: '251bd85ae5f753f35dfbe72ddd40d003b84387bd11f1c91b5f3c50d64132a715' },
-  'https://windows.php.net/downloads/releases/archives/php-8.1.27-nts-Win32-vs16-x64.zip':
-    { versionFolder: 'php-8.1.27', sha256: 'beda45964e30568f4f114c394c0bff7b7b16354b7be75ddfec506e0866c736fc' },
-  'https://windows.php.net/downloads/releases/archives/php-7.4.33-nts-Win32-vc15-x64.zip':
-    { versionFolder: 'php-7.4.33', sha256: '14ae3250d4447c8ccfc4c45a70d90adfbcd61e728d85f0be56a7ddf8f9c8aace' }
+  'https://windows.php.net/downloads/releases/php-8.3.36-nts-Win32-vs16-x64.zip':
+    { versionFolder: 'php-8.3.36', sha256: '3c9242622c7402b47c38d2ec2ed779cef3a290fd6f2bde6c35f9c482699e7900' },
+  'https://windows.php.net/downloads/releases/php-8.2.35-nts-Win32-vs16-x64.zip':
+    { versionFolder: 'php-8.2.35', sha256: '798ffa4b9ce22a820d57048e9695df7245bf917ed067917f256942a10918a8cc' }
 };
 
 app.post('/api/php/download', (req, res) => {
