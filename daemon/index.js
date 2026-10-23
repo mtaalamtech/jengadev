@@ -18,7 +18,7 @@ const port = 4000;
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.32';
+const APP_VERSION = '1.0.33';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -271,6 +271,15 @@ app.use('/', express.static(path.join(appRoot, 'dashboard'), {
 app.use('/api', (req, res, next) => {
   if (hasValidToken(req)) return next();
   res.status(401).json({ success: false, message: 'Missing or invalid daemon token. Reopen JengaDev from its app icon to get an authenticated session.' });
+});
+
+// Lets an already-authenticated browser pull the raw token to build a
+// shareable dashboard link for onboarding another browser/device, without
+// needing to open config/daemon_token.txt on disk - the request calling
+// this already proved it has the token (cookie or header), so this isn't
+// handing it to anyone new.
+app.get('/api/token', (req, res) => {
+  res.json({ success: true, token: DAEMON_TOKEN });
 });
 
 // Background Host Scanner

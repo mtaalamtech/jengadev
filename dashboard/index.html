@@ -163,6 +163,15 @@
                             <div class="log-line info"><span class="time">[System]</span> Welcome to JengaDev by Core Mtaalam Technologies.</div>
                         </div>
                     </div>
+
+                    <div class="card" style="margin-top: 20px;">
+                        <h3>Share Dashboard Access</h3>
+                        <p style="margin:0 0 12px; color:var(--text-muted); font-size:0.9rem;">Open this link once on another browser or device to authenticate it too. Keep it private, anyone with this link can control this JengaDev install.</p>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="share-link" readonly style="flex:1; font-family:ui-monospace,Consolas,monospace; font-size:0.82rem;">
+                            <button class="btn" onclick="copyShareLink()">Copy</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Hosts Tab (Master-Detail) -->

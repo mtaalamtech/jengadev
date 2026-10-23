@@ -1275,7 +1275,32 @@ fetchSslList();
 loadPhpConfig();
 loadMysqlConfig();
 fetchMailpitConfig();
+initShareLink();
 // Db users are now fetched dynamically when the service starts via updateStatusUI
+
+// --- Share dashboard access ---
+async function initShareLink() {
+    try {
+        const res = await fetch(`${API_BASE}/token`);
+        const data = await res.json();
+        if (data.token) document.getElementById('share-link').value = `${window.location.origin}/?token=${data.token}`;
+    } catch (e) { console.error(e); }
+}
+
+function copyShareLink() {
+    const input = document.getElementById('share-link');
+    input.select();
+    input.setSelectionRange(0, input.value.length);
+    try {
+        if (document.execCommand('copy')) {
+            showToast('Link copied to clipboard', false);
+        } else {
+            showToast('Could not copy - select and copy manually', true);
+        }
+    } catch (e) {
+        showToast('Could not copy - select and copy manually', true);
+    }
+}
 
 // --- Database User Management ---
 let currentDbEngine = '';

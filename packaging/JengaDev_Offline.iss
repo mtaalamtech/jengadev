@@ -1,10 +1,10 @@
 [Setup]
 AppName=JengaDev
-AppVersion=1.0.32
+AppVersion=1.0.33
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
 OutputDir=C:\Users\Admin\Desktop
-OutputBaseFilename=JengaDev_Setup_Full_v1.0.32
+OutputBaseFilename=JengaDev_Setup_Full_v1.0.33
 Compression=lzma2/ultra
 SolidCompression=yes
 SetupIconFile=C:\safuweb\nexus\JengaDev.ico
@@ -169,7 +169,21 @@ begin
     // Unconditional instead: stopping services that aren't running is a
     // harmless no-op, and this is the one place that actually matters for
     // the port check that immediately follows.
+    //
+    // StopJengaDevServices runs synchronously on the UI thread (it Execs
+    // powershell with ewWaitUntilTerminated and can block for several
+    // seconds polling for ports to free up) - a click landing on the Next
+    // button while that's in flight was getting silently swallowed by the
+    // frozen window, so the page looked like it needed two clicks: the
+    // first vanished into the freeze, and only the next one actually fired
+    // NextButtonClick. Disabling the button for the duration means a click
+    // during the freeze does nothing (no lost click, no confusion) instead
+    // of nothing visibly happening until a second click finally lands.
+    WizardForm.NextButton.Enabled := False;
+    WizardForm.BackButton.Enabled := False;
     StopJengaDevServices;
+    WizardForm.NextButton.Enabled := True;
+    WizardForm.BackButton.Enabled := True;
   end;
 
   if CurPageID = wpReady then
