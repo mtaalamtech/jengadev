@@ -2060,6 +2060,19 @@ app.post('/api/mysql/backup', async (req, res) => {
     if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
 
     if (dbName) {
+      // Checked up front instead of letting mysqldump fail on it - a name
+      // typed but never actually selected from the live-search dropdown
+      // (a stray partial search term left in the field) used to surface
+      // as a raw mysqldump stderr dump; this gives a clear, specific
+      // error pointing at the actual mistake instead.
+      const checkConn = await getDbConnection();
+      const [dbRows] = await checkConn.query('SHOW DATABASES');
+      await checkConn.end();
+      const knownDbs = dbRows.map(r => r.Database);
+      if (!knownDbs.includes(dbName)) {
+        return res.status(400).json({ success: false, message: `Database "${dbName}" does not exist - pick one from the dropdown, or leave the field blank to back up every database.` });
+      }
+
       const fileName = `${dbName}_${Date.now()}.sql`;
       const targetFile = path.join(backupsDir, fileName);
       const args = ['-u', 'root', ...authArgs, dbName];
@@ -2127,6 +2140,15 @@ app.post('/api/mysql/restore', async (req, res) => {
 
     const config = getConfig();
     const authArgs = config.mysql_root_password ? [`-p${config.mysql_root_password}`] : [];
+
+    if (dbName) {
+      const checkConn = await getDbConnection();
+      const [dbRows] = await checkConn.query('SHOW DATABASES');
+      await checkConn.end();
+      if (!dbRows.map(r => r.Database).includes(dbName)) {
+        return res.status(400).json({ success: false, message: `Database "${dbName}" does not exist - pick one from the dropdown, or create it first.` });
+      }
+    }
     const args = dbName ? ['-u', 'root', ...authArgs, dbName] : ['-u', 'root', ...authArgs];
 
     const fd = fs.openSync(filePath, 'r');

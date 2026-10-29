@@ -1434,6 +1434,7 @@ function initLiveSearch(inputId, dropdownId, engine) {
     input.addEventListener('input', () => render(matchesFor(input.value.trim())));
     input.addEventListener('keyup', () => render(matchesFor(input.value.trim())));
     input.addEventListener('focus', () => render(matchesFor(input.value.trim())));
+    input.addEventListener('click', () => render(matchesFor(input.value.trim())));
 
     input.addEventListener('keydown', (e) => {
         const items = dropdown.querySelectorAll('.live-search-item');
@@ -1464,8 +1465,18 @@ function initLiveSearch(inputId, dropdownId, engine) {
     dropdown.addEventListener('mousedown', (e) => {
         const item = e.target.closest('.live-search-item');
         if (!item) return;
+        // Without this, the mousedown's default focus handling can pull
+        // focus off the input before this handler's own logic finishes,
+        // which was leaving stale typed text in the field instead of the
+        // clicked suggestion - looked like clicking a result did nothing.
+        e.preventDefault();
         input.value = item.dataset.value;
         dropdown.classList.remove('open');
+        // Not re-focusing here deliberately: preventDefault already keeps
+        // focus on the input through this click, and an explicit
+        // input.focus() call re-triggers the 'focus' listener above,
+        // which re-opens the dropdown immediately (now filtered down to
+        // the value that was just selected) right after closing it.
     });
 
     document.addEventListener('click', (e) => {
