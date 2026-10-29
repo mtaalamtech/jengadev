@@ -2038,24 +2038,78 @@ app.post('/api/mysql/backup', async (req, res) => {
   try {
     const { dbName } = req.body;
     if (dbName && !/^[a-zA-Z0-9_]+$/.test(dbName)) return res.status(400).json({ success: false, message: 'Invalid database name' });
-    
+
     let mysqlBin = path.join(binDir, 'mysql', 'bin');
     if (!fs.existsSync(path.join(mysqlBin, 'mysqldump.exe'))) mysqlBin = path.join(binDir, 'mysql');
-    
-    const backupsDir = path.join(appRoot, 'backups');
-    if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir);
-    
-    const fileName = `${dbName || 'all_databases'}_${Date.now()}.sql`;
-    const targetFile = path.join(backupsDir, fileName);
-    
     const dumpExe = path.join(mysqlBin, 'mysqldump.exe');
-    const args = dbName ? ['-u', 'root', dbName] : ['-u', 'root', '--all-databases'];
-    
-    const fd = fs.openSync(targetFile, 'w');
-    require('child_process').spawnSync(dumpExe, args, { stdio: ['ignore', fd, 'ignore'] });
-    fs.closeSync(fd);
-    
-    res.json({ success: true, message: `Backup saved to ${fileName}` });
+
+    // This never passed the configured root password to mysqldump at all -
+    // anyone who'd set one (the dashboard has its own "set root password"
+    // flow) got a silent auth failure: spawnSync's stderr was being
+    // discarded and the exit code was never checked, so an empty/failed
+    // dump still reported "Backup saved". MySQL's CLI tools require the
+    // password glued directly onto -p (a separate array element would be
+    // read as a password of literal value "-p", not a flag) - and -p with
+    // nothing after it blocks waiting for interactive input on a stream
+    // this spawns with stdin already set to 'ignore', so it's only added
+    // when a password is actually configured.
+    const config = getConfig();
+    const authArgs = config.mysql_root_password ? [`-p${config.mysql_root_password}`] : [];
+
+    const backupsDir = path.join(appRoot, 'backups');
+    if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
+
+    if (dbName) {
+      const fileName = `${dbName}_${Date.now()}.sql`;
+      const targetFile = path.join(backupsDir, fileName);
+      const args = ['-u', 'root', ...authArgs, dbName];
+
+      const fd = fs.openSync(targetFile, 'w');
+      const result = require('child_process').spawnSync(dumpExe, args, { stdio: ['ignore', fd, 'pipe'] });
+      fs.closeSync(fd);
+
+      if (result.status !== 0) {
+        try { fs.unlinkSync(targetFile); } catch (e) {}
+        const detail = result.stderr ? result.stderr.toString().trim() : `mysqldump exited with code ${result.status}`;
+        return res.status(500).json({ success: false, message: 'Backup failed: ' + detail });
+      }
+      return res.json({ success: true, message: `Backup saved to ${fileName}` });
+    }
+
+    // Backing up everything: one dated folder with one file per database,
+    // instead of mysqldump --all-databases into a single file - a database
+    // with a lot of records makes that one file unwieldy to search, and a
+    // single corrupt/truncated dump used to put every database at risk on
+    // restore instead of just the one that failed.
+    const conn = await getDbConnection();
+    const [rows] = await conn.query('SHOW DATABASES');
+    await conn.end();
+    const dbs = rows.map(r => r.Database).filter(db => !['information_schema', 'mysql', 'performance_schema', 'sys'].includes(db));
+    if (dbs.length === 0) return res.status(400).json({ success: false, message: 'No databases to back up' });
+
+    const stamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '').replace('T', '_');
+    const folder = path.join(backupsDir, stamp);
+    fs.mkdirSync(folder, { recursive: true });
+
+    const failures = [];
+    for (const db of dbs) {
+      const targetFile = path.join(folder, `${db}.sql`);
+      const args = ['-u', 'root', ...authArgs, db];
+      const fd = fs.openSync(targetFile, 'w');
+      const result = require('child_process').spawnSync(dumpExe, args, { stdio: ['ignore', fd, 'pipe'] });
+      fs.closeSync(fd);
+      if (result.status !== 0) {
+        failures.push(`${db} (${result.stderr ? result.stderr.toString().trim() : 'exit ' + result.status})`);
+      }
+    }
+
+    if (failures.length === dbs.length) {
+      return res.status(500).json({ success: false, message: 'Backup failed for every database: ' + failures.join('; ') });
+    }
+    const message = failures.length
+      ? `Backed up ${dbs.length - failures.length}/${dbs.length} databases to backups\\${stamp} (failed: ${failures.join('; ')})`
+      : `Backed up ${dbs.length} databases to backups\\${stamp}`;
+    res.json({ success: failures.length === 0, message });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Backup failed: ' + err.message });
   }
@@ -2066,17 +2120,23 @@ app.post('/api/mysql/restore', async (req, res) => {
     const { dbName, filePath } = req.body;
     if (dbName && !/^[a-zA-Z0-9_]+$/.test(dbName)) return res.status(400).json({ success: false, message: 'Invalid database name' });
     if (!filePath || !fs.existsSync(filePath)) return res.status(400).json({ success: false, message: 'Invalid file path' });
-    
+
     let mysqlBin = path.join(binDir, 'mysql', 'bin');
     if (!fs.existsSync(path.join(mysqlBin, 'mysql.exe'))) mysqlBin = path.join(binDir, 'mysql');
-    
     const mysqlExe = path.join(mysqlBin, 'mysql.exe');
-    const args = dbName ? ['-u', 'root', dbName] : ['-u', 'root'];
-    
+
+    const config = getConfig();
+    const authArgs = config.mysql_root_password ? [`-p${config.mysql_root_password}`] : [];
+    const args = dbName ? ['-u', 'root', ...authArgs, dbName] : ['-u', 'root', ...authArgs];
+
     const fd = fs.openSync(filePath, 'r');
-    require('child_process').spawnSync(mysqlExe, args, { stdio: [fd, 'ignore', 'ignore'] });
+    const result = require('child_process').spawnSync(mysqlExe, args, { stdio: [fd, 'ignore', 'pipe'] });
     fs.closeSync(fd);
-    
+
+    if (result.status !== 0) {
+      const detail = result.stderr ? result.stderr.toString().trim() : `mysql exited with code ${result.status}`;
+      return res.status(500).json({ success: false, message: 'Restore failed: ' + detail });
+    }
     res.json({ success: true, message: 'Database restored successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Restore failed: ' + err.message });

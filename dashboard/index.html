@@ -403,14 +403,20 @@
                             <div class="grid-2">
                                 <div class="form-group" style="background: var(--surface-hover); padding: 15px; border-radius: 8px;">
                                     <label style="font-weight: 600;">Backup Database</label>
-                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Leave blank to backup all databases</p>
-                                    <input type="text" id="mysql-backup-db" list="mysql-databases-list" placeholder="Search or select database..." class="input-text" style="width: 100%;">
+                                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Leave blank to back up every database - creates a dated folder with one file per database, so one huge or broken dump can't take the rest down with it.</p>
+                                    <div class="live-search">
+                                        <input type="text" id="mysql-backup-db" placeholder="Search or select database... (blank = all)" class="input-text" style="width: 100%;" autocomplete="off">
+                                        <div class="live-search-dropdown" id="mysql-backup-db-dropdown"></div>
+                                    </div>
                                     <button class="btn" style="margin-top:15px; width: 100%; background: #10b981; color: white;" onclick="backupMysql()">Generate Backup (.sql)</button>
                                 </div>
                                 <div class="form-group" style="background: var(--surface-hover); padding: 15px; border-radius: 8px;">
                                     <label style="font-weight: 600;">Restore Database</label>
                                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Select target database and backup file</p>
-                                    <input type="text" id="mysql-restore-db" list="mysql-databases-list" placeholder="Target database..." class="input-text" style="width: 100%; margin-bottom: 10px;">
+                                    <div class="live-search" style="margin-bottom: 10px;">
+                                        <input type="text" id="mysql-restore-db" placeholder="Target database..." class="input-text" style="width: 100%;" autocomplete="off">
+                                        <div class="live-search-dropdown" id="mysql-restore-db-dropdown"></div>
+                                    </div>
                                     <div style="display: flex; gap: 10px;">
                                         <input type="text" id="mysql-restore-file" class="input-text" placeholder="Absolute path to .sql file" style="flex: 1;">
                                         <button class="btn btn-secondary" onclick="browseSqlFile()">Browse...</button>

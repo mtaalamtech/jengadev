@@ -427,6 +427,39 @@ body {
 }
 .input-text:focus { outline: none; border-color: var(--accent); }
 
+.live-search { position: relative; }
+.live-search-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    margin-top: 4px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.live-search-dropdown.open { display: block; }
+.live-search-item {
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+.live-search-item:hover, .live-search-item.active {
+    background: var(--accent);
+    color: #fff;
+}
+.live-search-empty {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
 /* Icons */
 .icon-caddy { color: #00add8; font-weight:bold;}
 .icon-caddy::after { content: "C"; }

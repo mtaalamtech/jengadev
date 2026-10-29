@@ -1276,6 +1276,8 @@ loadPhpConfig();
 loadMysqlConfig();
 fetchMailpitConfig();
 initShareLink();
+initLiveSearch('mysql-backup-db', 'mysql-backup-db-dropdown', 'mysql');
+initLiveSearch('mysql-restore-db', 'mysql-restore-db-dropdown', 'mysql');
 // Db users are now fetched dynamically when the service starts via updateStatusUI
 
 // --- Share dashboard access ---
@@ -1378,6 +1380,8 @@ function renderDbUsers(engine, usersToRender) {
     });
 }
 
+const dbListCache = { mysql: [], postgres: [] };
+
 async function fetchDatabases() {
     for (const engine of ['mysql', 'postgres']) {
         try {
@@ -1387,8 +1391,86 @@ async function fetchDatabases() {
             if (datalist && data.success && data.databases) {
                 datalist.innerHTML = data.databases.map(db => `<option value="${db}">`).join('');
             }
+            if (data.success && data.databases) dbListCache[engine] = data.databases;
         } catch(e) { console.error(`Failed to fetch ${engine} databases:`, e); }
     }
+}
+
+// Live-search dropdown for picking a database by name - the native
+// <datalist> this used to rely on only does prefix-matching in most
+// browsers and can't be styled, so typing "ord" to find "shop_orders"
+// wouldn't surface anything. This filters a cached database list
+// client-side on every keystroke instead, with click and keyboard
+// (up/down/enter/escape) selection.
+function initLiveSearch(inputId, dropdownId, engine) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+    let activeIndex = -1;
+
+    function render(matches) {
+        activeIndex = -1;
+        if (matches.length === 0) {
+            dropdown.innerHTML = `<div class="live-search-empty">No matching database</div>`;
+        } else {
+            dropdown.innerHTML = matches.map((db, i) =>
+                `<div class="live-search-item" data-index="${i}" data-value="${db}">${db}</div>`
+            ).join('');
+        }
+        dropdown.classList.add('open');
+    }
+
+    function matchesFor(query) {
+        const list = dbListCache[engine] || [];
+        if (!query) return list;
+        const q = query.toLowerCase();
+        return list.filter(db => db.toLowerCase().includes(q));
+    }
+
+    // keyup is a belt-and-suspenders fallback alongside input - some input
+    // methods (certain autofill/IME/automation paths) set .value without
+    // firing a bubbling 'input' event, which would otherwise leave the
+    // dropdown stale until the next real keystroke.
+    input.addEventListener('input', () => render(matchesFor(input.value.trim())));
+    input.addEventListener('keyup', () => render(matchesFor(input.value.trim())));
+    input.addEventListener('focus', () => render(matchesFor(input.value.trim())));
+
+    input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.live-search-item');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+        } else if (e.key === 'Enter') {
+            if (activeIndex >= 0) {
+                e.preventDefault();
+                input.value = items[activeIndex].dataset.value;
+                dropdown.classList.remove('open');
+            }
+            return;
+        } else if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+            return;
+        } else {
+            return;
+        }
+        items.forEach((item, i) => item.classList.toggle('active', i === activeIndex));
+        items[activeIndex].scrollIntoView({ block: 'nearest' });
+    });
+
+    dropdown.addEventListener('mousedown', (e) => {
+        const item = e.target.closest('.live-search-item');
+        if (!item) return;
+        input.value = item.dataset.value;
+        dropdown.classList.remove('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== input && !dropdown.contains(e.target)) dropdown.classList.remove('open');
+    });
 }
 
 async function browseSqlFile() {
