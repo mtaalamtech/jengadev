@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JengaDev — Free Local Dev Server for Windows (XAMPP &amp; Laragon Alternative)</title>
-<meta name="description" content="JengaDev is a free, portable local development server for Windows: Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A modern alternative to XAMPP and Laragon.">
+<title>JengaDev — Free Local Dev Server for Windows &amp; Linux (XAMPP &amp; Laragon Alternative)</title>
+<meta name="description" content="JengaDev is a free, portable local development server for Windows and Linux: Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A modern alternative to XAMPP and Laragon.">
 <link rel="canonical" href="https://mtaalamtech.github.io/jengadev/">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0078D6">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="JengaDev — Free Local Dev Server for Windows">
-<meta property="og:description" content="Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A free alternative to XAMPP and Laragon.">
+<meta property="og:title" content="JengaDev — Free Local Dev Server for Windows &amp; Linux">
+<meta property="og:description" content="Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard. A free alternative to XAMPP and Laragon. Native on Windows, Docker-based on Linux.">
 <meta property="og:url" content="https://mtaalamtech.github.io/jengadev/">
 <meta property="og:image" content="https://mtaalamtech.github.io/jengadev/dashboard-overview.png">
 <meta property="og:site_name" content="JengaDev">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="JengaDev — Free Local Dev Server for Windows">
+<meta name="twitter:title" content="JengaDev — Free Local Dev Server for Windows &amp; Linux">
 <meta name="twitter:description" content="Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard.">
 <meta name="twitter:image" content="https://mtaalamtech.github.io/jengadev/dashboard-overview.png">
 
@@ -31,10 +31,10 @@
   "name": "JengaDev",
   "url": "https://mtaalamtech.github.io/jengadev/",
   "downloadUrl": "https://github.com/mtaalamtech/jengadev/releases/latest",
-  "softwareVersion": "1.0.25",
-  "operatingSystem": "Windows",
+  "softwareVersion": "1.0.34",
+  "operatingSystem": "Windows, Linux",
   "applicationCategory": "DeveloperApplication",
-  "description": "A free, portable local development server for Windows bundling Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard.",
+  "description": "A free, portable local development server for Windows and Linux bundling Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit with automatic local HTTPS, managed from a browser dashboard.",
   "offers": {
     "@type": "Offer",
     "price": "0",
@@ -130,11 +130,12 @@
 
 <div class="wrap">
   <header class="hero">
-    <div class="eyebrow">Free &middot; Open Source &middot; Windows</div>
-    <h1>A local dev server for Windows that doesn't fight you.</h1>
-    <p class="tagline">JengaDev bundles Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit into one portable package — with automatic local HTTPS out of the box. A modern, free alternative to XAMPP and Laragon.</p>
+    <div class="eyebrow">Free &middot; Open Source &middot; Windows &amp; Linux</div>
+    <h1>A local dev server that doesn't fight you.</h1>
+    <p class="tagline">JengaDev bundles Caddy, PHP, MySQL/MariaDB, PostgreSQL, SQLite, and Mailpit into one portable package — with automatic local HTTPS out of the box. Native on Windows, Docker-based on Linux. A modern, free alternative to XAMPP and Laragon.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="https://github.com/mtaalamtech/jengadev/releases/latest">Download for Windows</a>
+      <a class="btn btn-secondary" href="https://github.com/mtaalamtech/jengadev#linux">Get it for Linux</a>
       <a class="btn btn-secondary" href="https://github.com/mtaalamtech/jengadev">View on GitHub</a>
     </div>
     <div class="badges">
@@ -168,8 +169,12 @@
         <p>Every site gets its own error log with automatic size-based rotation, so logs stay readable as your project count grows.</p>
       </div>
       <div class="feature">
-        <h3>Security-reviewed</h3>
-        <p>Per-install API auth, checksum-verified downloads, and a locked-down install folder — see the <a href="https://github.com/mtaalamtech/jengadev#security">security notes</a>.</p>
+        <h3>Security-reviewed &amp; actively patched</h3>
+        <p>Per-install API auth, checksum-verified downloads, and a locked-down install folder. Critical upstream PHP vulnerabilities get patched fast — see the <a href="https://github.com/mtaalamtech/jengadev#security">security notes</a>.</p>
+      </div>
+      <div class="feature">
+        <h3>Docker-based on Linux</h3>
+        <p>Prebuilt images pulled from GitHub Container Registry — no local builds, no waiting. Toggle LAN access on or off per machine.</p>
       </div>
     </div>
   </section>
@@ -185,7 +190,7 @@
           <tr><td>Databases</td><td>MySQL/MariaDB + PostgreSQL + SQLite</td><td>MySQL/MariaDB + addons</td><td>MySQL/MariaDB</td></tr>
           <tr><td>Control surface</td><td>Browser dashboard</td><td>Native tray app</td><td>Native control panel</td></tr>
           <tr><td>License</td><td>Free &amp; open source (MIT)</td><td>Free, closed source</td><td>Free, open source</td></tr>
-          <tr><td>Platforms</td><td>Windows</td><td>Windows</td><td>Windows / macOS / Linux</td></tr>
+          <tr><td>Platforms</td><td class="hl">Windows &amp; Linux</td><td>Windows</td><td>Windows / macOS / Linux</td></tr>
         </tbody>
       </table>
     </div>
@@ -194,9 +199,10 @@
 
   <section style="border-bottom:none;">
     <h2>Get started</h2>
-    <p>Download the installer, run it (it asks for admin rights once), and JengaDev opens its dashboard automatically with an authenticated session already set up.</p>
+    <p>On Windows, download the installer and run it (it asks for admin rights once) — JengaDev opens its dashboard automatically with an authenticated session already set up. On Linux, clone the repo and run <code>./install.sh</code> — Docker gets installed for you if it's missing.</p>
     <div class="cta-row">
-      <a class="btn btn-primary" href="https://github.com/mtaalamtech/jengadev/releases/latest">Download the latest release</a>
+      <a class="btn btn-primary" href="https://github.com/mtaalamtech/jengadev/releases/latest">Download for Windows</a>
+      <a class="btn btn-secondary" href="https://github.com/mtaalamtech/jengadev#linux">Get it for Linux</a>
     </div>
   </section>
 
