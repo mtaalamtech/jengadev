@@ -11,7 +11,13 @@
     "type": "git",
     "url": "https://github.com/mtaalamtech/jengadev.git"
   },
-  "keywords": ["dev-server", "local-development", "php", "caddy", "windows"],
+  "keywords": [
+    "dev-server",
+    "local-development",
+    "php",
+    "caddy",
+    "windows"
+  ],
   "author": "Core Mtaalam Technologies (https://mtaalamtech.com)",
   "license": "MIT",
   "type": "commonjs",
@@ -24,7 +30,7 @@
     "mysql2": "^3.23.1",
     "node-forge": "^1.4.0",
     "pg": "^8.22.0",
-    "pidusage": "^4.0.1",
+    "pidusage": "^4.1.0",
     "sharp": "^0.35.3"
   }
 }
