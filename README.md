@@ -63,6 +63,17 @@ Requires only Docker (the script installs it for you on Debian/Ubuntu and Fedora
 
 JengaDev went through a structured security review before this repository went public — authentication on every dashboard API call, checksum-verified downloads for every third-party component it fetches, and a locked-down install directory so other accounts on a shared machine can't tamper with it. Found a security issue? Please open a private security advisory on this repo rather than a public issue.
 
+## OS compatibility notes
+
+A living list of OS-version-specific behavior that has actually broken JengaDev in the field, kept here so the next report fits a known pattern instead of starting from zero. Add to this whenever a bug turns out to be OS-version-specific rather than a JengaDev bug outright.
+
+| OS / version | What changed | Affected | Status |
+|---|---|---|---|
+| Windows 11 24H2/25H2 (Aug 2026, KB5120998) | `wmic.exe` fully removed - can't even be re-added as a Feature on Demand (it became optional/not-installed-by-default back in 22H2, but this is when it actually disappeared for most machines) | Process CPU/memory stats (`pidusage` dependency) | Fixed in v1.0.38 - upgraded to `pidusage@4.1.0`, which detects wmic's absence and falls back to a PowerShell-based method instead of crashing |
+| Windows 11 (fresh/clean installs) | **Smart App Control** blocks unsigned executables with no user override, including Inno Setup's self-extracted temp installer helper | Installation itself (Error 4551) | Documented workaround (disable Smart App Control) in the Windows install section above; the durable fix is code signing, deferred for now as a cost decision |
+
+When a bug report says "only on Windows 11" / "only on this one machine" / "worked before a Windows update": check the Windows release health dashboard (`https://learn.microsoft.com/en-us/windows/release-health/`) for what changed in that build, and check whether any bundled or `npm`-installed dependency shells out to a command-line tool that might be affected (`grep -rn` for the tool name across `daemon/`, `JengaDevTray.cs`, and `node_modules/` is usually enough to confirm or rule it out, same as the `pidusage`/`wmic` case above).
+
 ## Third-party components
 
 On Windows, JengaDev bundles or downloads Caddy, PHP, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, and Node.js, each under its own license, plus a set of permissively-licensed npm packages. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for the full list. On Linux, those same components run as official upstream Docker images instead of bundled binaries - see each image's own listing on Docker Hub/GHCR for its license.
