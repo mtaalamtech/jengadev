@@ -34,6 +34,17 @@ namespace JengaDevTrayApp
         [STAThread]
         static void Main(string[] args)
         {
+            // There was no record anywhere of why the tray app or daemon
+            // failed to start - just Windows' own Event Viewer, which isn't
+            // somewhere most users think to look. Catching both unhandled-
+            // exception surfaces WinForms has (ThreadException for the UI
+            // message loop, UnhandledException for anything else) and
+            // writing them to a plain log file means a user can just send
+            // that file instead of walking through Event Viewer.
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => LogCrash(e.ExceptionObject as Exception ?? new Exception(e.ExceptionObject != null ? e.ExceptionObject.ToString() : "unknown error"));
+            Application.ThreadException += (s, e) => LogCrash(e.Exception);
+
             bool silent = Array.IndexOf(args, "--silent") >= 0;
             // Without this, clicking the Start Menu/Desktop shortcut a second
             // time while JengaDev is already running spawns a second tray
@@ -63,6 +74,18 @@ namespace JengaDevTrayApp
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new JengaDevContext(silent));
             }
+        }
+
+        static void LogCrash(Exception ex)
+        {
+            try
+            {
+                string logDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                if (!Directory.Exists(logDir)) Directory.CreateDirectory(logDir);
+                string logPath = Path.Combine(logDir, "tray_crash.log");
+                File.AppendAllText(logPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  JengaDevTray v" + Assembly.GetExecutingAssembly().GetName().Version + Environment.NewLine + ex + Environment.NewLine + Environment.NewLine);
+            }
+            catch { }
         }
     }
 

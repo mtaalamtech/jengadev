@@ -40,6 +40,19 @@ if (!fs.existsSync(sslDir)) fs.mkdirSync(sslDir);
 if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
 const sslStatePath = path.join(configDir, 'ssl_state.json');
 
+// This process is always launched with CreateNoWindow=true (see
+// JengaDevTray.cs), so there's never a console visible to catch a crash on
+// - without this, a startup failure before the HTTP server comes up (a bad
+// config file, a port conflict outside the one EADDRINUSE case already
+// handled below, anything unexpected) just vanished with no trace at all.
+function logCrash(label, err) {
+  try {
+    fs.appendFileSync(path.join(logsDir, 'daemon_crash.log'), `${new Date().toISOString()}  JengaDev daemon v${APP_VERSION}  ${label}\n${err && err.stack ? err.stack : err}\n\n`);
+  } catch (e) {}
+}
+process.on('uncaughtException', (err) => { logCrash('uncaughtException', err); process.exit(1); });
+process.on('unhandledRejection', (err) => { logCrash('unhandledRejection', err); });
+
 // Utilities
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
