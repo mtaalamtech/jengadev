@@ -24,8 +24,8 @@ using System.Windows.Forms;
 [assembly: AssemblyCompany("Core Mtaalam Technologies")]
 [assembly: AssemblyProduct("JengaDev")]
 [assembly: AssemblyCopyright("Copyright © Core Mtaalam Technologies")]
-[assembly: AssemblyVersion("1.0.36.0")]
-[assembly: AssemblyFileVersion("1.0.36.0")]
+[assembly: AssemblyVersion("1.0.37.0")]
+[assembly: AssemblyFileVersion("1.0.37.0")]
 
 namespace JengaDevTrayApp
 {
