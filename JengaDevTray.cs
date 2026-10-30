@@ -24,8 +24,8 @@ using System.Windows.Forms;
 [assembly: AssemblyCompany("Core Mtaalam Technologies")]
 [assembly: AssemblyProduct("JengaDev")]
 [assembly: AssemblyCopyright("Copyright © Core Mtaalam Technologies")]
-[assembly: AssemblyVersion("1.0.35.0")]
-[assembly: AssemblyFileVersion("1.0.35.0")]
+[assembly: AssemblyVersion("1.0.36.0")]
+[assembly: AssemblyFileVersion("1.0.36.0")]
 
 namespace JengaDevTrayApp
 {
@@ -80,25 +80,53 @@ namespace JengaDevTrayApp
             exePath = Path.Combine(baseDir, "JengaDev.exe");
             tokenPath = Path.Combine(baseDir, "config", "daemon_token.txt");
 
-            trayIcon = new NotifyIcon();
-            string icoPath = Path.Combine(baseDir, "JengaDev.ico");
-            trayIcon.Icon = File.Exists(icoPath) ? new System.Drawing.Icon(icoPath) : SystemIcons.Application;
-            trayIcon.Text = "JengaDev";
-            trayIcon.Visible = true;
-
-            ContextMenu menu = new ContextMenu();
-            menu.MenuItems.Add(new MenuItem("Open Dashboard", OpenDashboard));
-            menu.MenuItems.Add("-");
-            menu.MenuItems.Add(new MenuItem("Start All Servers", StartAll));
-            menu.MenuItems.Add(new MenuItem("Stop All Servers", StopAll));
-            menu.MenuItems.Add("-");
-            menu.MenuItems.Add(new MenuItem("Quit", Quit));
-            trayIcon.ContextMenu = menu;
-            trayIcon.DoubleClick += OpenDashboard;
-
+            // The actual dev server mattering more than the tray icon
+            // itself: start it first, so a problem setting up the icon/menu
+            // below can never prevent Caddy/PHP/MySQL/etc. from coming up.
+            // This used to run last, after the icon and ContextMenu were
+            // built - on some Windows 11 machines, System.Windows.Forms.
+            // ContextMenu (the old pre-.NET-2.0 menu class, superseded by
+            // ContextMenuStrip back in 2005) throws a COMException "Class
+            // not registered" when instantiated, for reasons tied to shell
+            // component registration on that specific machine rather than
+            // anything JengaDev does wrong - and since that happened AFTER
+            // the tray icon was already made visible but BEFORE StartDaemon
+            // ran, it looked like the whole app was broken: a dead icon
+            // with no working menu, and no server ever actually started.
             StartDaemon(silent);
 
-            Application.ApplicationExit += (s, e) => { trayIcon.Visible = false; };
+            try
+            {
+                trayIcon = new NotifyIcon();
+                string icoPath = Path.Combine(baseDir, "JengaDev.ico");
+                trayIcon.Icon = File.Exists(icoPath) ? new System.Drawing.Icon(icoPath) : SystemIcons.Application;
+                trayIcon.Text = "JengaDev";
+                trayIcon.Visible = true;
+
+                // ContextMenuStrip instead of the legacy ContextMenu - see
+                // the comment above. It's fully GDI+ rendered rather than
+                // relying on native Win32/COM menu resources, so it isn't
+                // exposed to the same failure at all.
+                var menu = new ContextMenuStrip();
+                menu.Items.Add(new ToolStripMenuItem("Open Dashboard", null, OpenDashboard));
+                menu.Items.Add(new ToolStripSeparator());
+                menu.Items.Add(new ToolStripMenuItem("Start All Servers", null, StartAll));
+                menu.Items.Add(new ToolStripMenuItem("Stop All Servers", null, StopAll));
+                menu.Items.Add(new ToolStripSeparator());
+                menu.Items.Add(new ToolStripMenuItem("Quit", null, Quit));
+                trayIcon.ContextMenuStrip = menu;
+                trayIcon.DoubleClick += OpenDashboard;
+            }
+            catch (Exception ex)
+            {
+                // The server is already running at this point regardless -
+                // worth telling the user the tray icon itself is degraded
+                // rather than failing silently with a dead, menu-less icon
+                // and no explanation.
+                MessageBox.Show("JengaDev's server is running, but its tray icon couldn't fully initialize: " + ex.Message + "\n\nOpen the dashboard directly at http://127.0.0.1:4000", "JengaDev", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            Application.ApplicationExit += (s, e) => { if (trayIcon != null) trayIcon.Visible = false; };
         }
 
         // Reads the token fresh on every call rather than caching it once at
@@ -207,7 +235,7 @@ namespace JengaDevTrayApp
             }
             catch { }
 
-            trayIcon.Visible = false;
+            if (trayIcon != null) trayIcon.Visible = false;
             Application.Exit();
         }
     }
