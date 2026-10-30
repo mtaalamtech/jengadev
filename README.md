@@ -43,6 +43,10 @@ JengaDev gives you both for free, out of the box:
 2. Run it (it requests admin rights once, to install services and secure its own install folder).
 3. JengaDev starts and opens its dashboard automatically.
 
+**Installer blocked with "Error 4551: An Application Control policy has blocked this file" / "part of this app has been blocked"?**
+
+That's Windows 11's **Smart App Control**, not a regular antivirus warning - it blocks Inno Setup's self-extracted temp helper because this installer isn't code-signed yet, and unlike normal SmartScreen there's no "Run anyway" button for it. To install anyway: **Windows Security → App & browser control → Smart App Control → turn it Off**, then re-run the installer. If that setting is greyed out, Smart App Control has already locked into enforcement on that machine and unsigned software can't be installed without a Windows reinstall.
+
 ### Linux
 
 Docker-based — Caddy, PHP, MariaDB, PostgreSQL, Mailpit, Adminer, and phpMyAdmin run as containers (prebuilt images, nothing compiles locally), and the daemon itself is a single compiled binary with no other dependencies.
