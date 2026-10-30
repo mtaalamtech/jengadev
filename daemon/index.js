@@ -16,6 +16,21 @@ const AdmZip = require('adm-zip');
 const app = express();
 const port = 4000;
 
+// This process is always launched with CreateNoWindow=true (see
+// JengaDevTray.cs) and no stdio redirection, so on some machines
+// process.stdout/stderr are invalid handles - writing to them throws
+// EBADF. That's bad enough from a plain console.log, but a console.error
+// used as a bare Promise .catch() handler (several call sites below,
+// e.g. the one in the "start caddy" route) turns that throw into a NEW
+// unhandled rejection, and Node 15+ treats an unhandled rejection as
+// fatal by default: the entire daemon exits, silently, mid-request, with
+// no trace - exactly the "starting a service kills the whole app"
+// symptom reported on some Windows 11 machines. Wrapping both functions
+// once here protects every call site, including ones added later.
+const safeConsole = (fn) => (...args) => { try { fn(...args); } catch (e) {} };
+console.log = safeConsole(console.log.bind(console));
+console.error = safeConsole(console.error.bind(console));
+
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
 const APP_VERSION = '1.0.37';
