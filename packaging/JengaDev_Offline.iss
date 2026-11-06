@@ -224,7 +224,7 @@ begin
     PsCmd := PsCmd + '$appPath = ''' + ExpandConstant('{app}') + '''.Replace(''\'', ''/''); (Get-Content -Path ''' + ExpandConstant('{app}\Caddyfile') + ''') -replace ''C:/safuweb/nexus'', $appPath | Set-Content -Path ''' + ExpandConstant('{app}\Caddyfile') + '''; ';
       
     // Update User PATH environment variable
-    PsCmd := PsCmd + '$paths = @(''' + ExpandConstant('{app}\bin\php') + ''', ''' + ExpandConstant('{app}\bin\mysql\bin') + ''', ''' + ExpandConstant('{app}\bin\pgsql\bin') + '''); ' +
+    PsCmd := PsCmd + '$paths = @(''' + ExpandConstant('{app}\bin\php') + ''', ''' + ExpandConstant('{app}\bin\mysql\bin') + ''', ''' + ExpandConstant('{app}\bin\pgsql\bin') + ''', ''' + ExpandConstant('{app}\bin\composer') + '''); ' +
              '$userPath = [Environment]::GetEnvironmentVariable(''Path'', [EnvironmentVariableTarget]::User); ' +
              'if ($userPath -eq $null) { $userPath = '''' }; ' +
              '$changed = $false; ' +

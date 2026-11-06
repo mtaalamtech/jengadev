@@ -83,6 +83,18 @@ Node.js 20.11.1
     script (daemon\postgres-wrapper.js) as a real Node binary, since the
     packaged JengaDev.exe itself cannot run arbitrary scripts.
 
+Composer 2.11.1
+    https://getcomposer.org  /  https://github.com/composer/composer
+    License: MIT License
+    Copyright (c) Nils Adermann, Jordi Boggiano.
+    Bundled unmodified at bin\composer\composer.phar (downloaded from the
+    versioned GitHub release asset and checksum-verified against the
+    sha256 digest GitHub publishes for it), with a composer.bat wrapper
+    added by JengaDev to invoke it via the bundled PHP. On Linux, the same
+    version is copied in from the official composer:2.11.1 Docker image
+    in linux/php/Dockerfile instead. Used unmodified to manage PHP
+    dependencies for hosted sites.
+
 
 ================================================================================
 PART 2 - NPM PACKAGES USED BY THE JENGADEV DAEMON

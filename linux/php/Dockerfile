@@ -1,6 +1,13 @@
 ARG PHP_VERSION=8.3
 FROM php:${PHP_VERSION}-fpm-alpine
 
+# Composer 2.11.1 - pinned to the same version bundled with the Windows
+# build (bin/composer/composer.phar there) so `composer --version` matches
+# across both platforms. Copied straight from the official Composer image
+# rather than curl|checksum'd here, since that image is already the
+# Composer project's own verified build.
+COPY --from=composer:2.11.1 /usr/bin/composer /usr/bin/composer
+
 # The -dev packages below are build-only (headers/static libs for compiling
 # the extensions), but on Alpine the actual runtime .so files (libpng,
 # libjpeg-turbo, freetype, libzip, libpq, sqlite-libs, oniguruma, libcurl)

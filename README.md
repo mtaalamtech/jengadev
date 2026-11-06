@@ -32,6 +32,7 @@ JengaDev gives you both for free, out of the box:
 - **Mailpit built in** — catch and inspect outgoing mail from every hosted site without touching a real SMTP server.
 - **Per-host PHP error logs** with automatic size-based rotation, so logs stay manageable as the number of sites grows.
 - **Switchable PHP versions** — pick from several PHP builds per project.
+- **Composer bundled** — available on PATH as `composer` right after install (Windows) or inside the PHP containers (Linux), so dependency installs work out of the box with no separate download.
 - **Browser dashboard** — start/stop services, manage hosts, databases, and PHP config from `http://127.0.0.1:4000`, opened automatically (with an authenticated session) when you launch JengaDev.
 - **Auto-updater** — checks GitHub Releases for new versions; you approve every update explicitly.
 
@@ -58,6 +59,8 @@ cd jengadev/linux
 ```
 
 Requires only Docker (the script installs it for you on Debian/Ubuntu and Fedora/RHEL if it's missing) - no Node.js, no local builds. The dashboard is reachable at `http://127.0.0.1:4000` and, since Linux dev boxes are often headless servers rather than desktops, over the LAN too; `install.sh` prints both tokenized links when it finishes.
+
+Composer is bundled in the PHP containers - run it against your project with, e.g., `docker compose exec php83 composer install`.
 
 ## Security
 
