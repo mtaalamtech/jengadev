@@ -1,10 +1,10 @@
 [Setup]
 AppName=JengaDev
-AppVersion=1.0.39
+AppVersion=1.0.40
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
 OutputDir=C:\Users\Admin\Desktop
-OutputBaseFilename=JengaDev_Setup_Full_v1.0.39
+OutputBaseFilename=JengaDev_Setup_Full_v1.0.40
 Compression=lzma2/ultra
 SolidCompression=yes
 SetupIconFile=C:\safuweb\nexus\JengaDev.ico
@@ -51,6 +51,7 @@ begin
   S := S + Space + '• SQLite' + NewLine;
   S := S + Space + '• phpMyAdmin & Adminer' + NewLine;
   S := S + Space + '• Mailpit (Local Email Tester)' + NewLine;
+  S := S + Space + '• Composer (PHP Dependency Manager)' + NewLine;
   
   Result := S;
 end;
@@ -222,9 +223,18 @@ begin
       
     // Fix Caddyfile absolute paths
     PsCmd := PsCmd + '$appPath = ''' + ExpandConstant('{app}') + '''.Replace(''\'', ''/''); (Get-Content -Path ''' + ExpandConstant('{app}\Caddyfile') + ''') -replace ''C:/safuweb/nexus'', $appPath | Set-Content -Path ''' + ExpandConstant('{app}\Caddyfile') + '''; ';
-      
-    // Update User PATH environment variable
-    PsCmd := PsCmd + '$paths = @(''' + ExpandConstant('{app}\bin\php') + ''', ''' + ExpandConstant('{app}\bin\mysql\bin') + ''', ''' + ExpandConstant('{app}\bin\pgsql\bin') + ''', ''' + ExpandConstant('{app}\bin\composer') + '''); ' +
+
+    PsCmd := PsCmd + '"';
+
+    WizardForm.StatusLabel.Caption := 'Extracting offline databases... (This may take a few minutes)';
+    Exec('powershell.exe', PsCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+    // Update User PATH environment variable - its own step/caption so it's
+    // clear PHP, MySQL, PostgreSQL and Composer are all being wired up, not
+    // just silently folded into the "extracting databases" step above.
+    WizardForm.StatusLabel.Caption := 'Adding PHP, MySQL, PostgreSQL and Composer to your PATH...';
+    PsCmd := '-ExecutionPolicy Bypass -WindowStyle Hidden -Command "' +
+             '$paths = @(''' + ExpandConstant('{app}\bin\php') + ''', ''' + ExpandConstant('{app}\bin\mysql\bin') + ''', ''' + ExpandConstant('{app}\bin\pgsql\bin') + ''', ''' + ExpandConstant('{app}\bin\composer') + '''); ' +
              '$userPath = [Environment]::GetEnvironmentVariable(''Path'', [EnvironmentVariableTarget]::User); ' +
              'if ($userPath -eq $null) { $userPath = '''' }; ' +
              '$changed = $false; ' +
@@ -237,13 +247,10 @@ begin
              '    } ' +
              '  } ' +
              '}; ' +
-             'if ($changed) { [Environment]::SetEnvironmentVariable(''Path'', $userPath, [EnvironmentVariableTarget]::User); }; ';
-      
-    PsCmd := PsCmd + '"';
-    
-    WizardForm.StatusLabel.Caption := 'Extracting offline databases... (This may take a few minutes)';
+             'if ($changed) { [Environment]::SetEnvironmentVariable(''Path'', $userPath, [EnvironmentVariableTarget]::User); }; ' +
+             '"';
     Exec('powershell.exe', PsCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    
+
     WizardForm.StatusLabel.Caption := 'Configuring auto-start settings...';
     PsCmd := '-ExecutionPolicy Bypass -WindowStyle Hidden -Command "$services = @(''mysql'', ''postgres'', ''mailpit''); ';
     PsCmd := PsCmd + 'if (!(Test-Path ''' + ExpandConstant('{app}\config\first_run_autostart.json') + ''')) { ConvertTo-Json @($services) | Out-File -FilePath ''' + ExpandConstant('{app}\config\first_run_autostart.json') + ''' -Encoding utf8 } "';
