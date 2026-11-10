@@ -24,6 +24,7 @@ test_*.js
 test_*.ps1
 test_*.txt
 PORTFOLIO-*.md
+JENGADEV.md
 
 # OS/editor cruft
 .DS_Store
