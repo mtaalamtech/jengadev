@@ -3,25 +3,25 @@ AppName=JengaDev
 AppVersion=1.0.40
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
-OutputDir=C:\Users\Admin\Desktop
+OutputDir={#GetEnv("USERPROFILE")}\Desktop
 OutputBaseFilename=JengaDev_Setup_Full_v1.0.40
 Compression=lzma2/ultra
 SolidCompression=yes
-SetupIconFile=C:\safuweb\nexus\JengaDev.ico
+SetupIconFile=D:\Projects\safuweb\nexus\JengaDev.ico
 UninstallDisplayIcon={app}\JengaDev.ico
 PrivilegesRequired=admin
 AppPublisher=Core Mtaalam Technologies
 AppPublisherURL=https://mtaalamtech.com
 AppSupportURL=https://mtaalamtech.com
 AppUpdatesURL=https://mtaalamtech.com
-LicenseFile=C:\safuweb\nexus\scratch\license.txt
+LicenseFile=D:\Projects\safuweb\nexus\scratch\license.txt
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"
 
 [Files]
-Source: "C:\safuweb\nexus\JengaDev.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\JengaDev_Build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "JengaDev_Offline.iss"
+Source: "D:\Projects\safuweb\nexus\JengaDev.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\Projects\JengaDev_Build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "JengaDev_Offline.iss"
 
 [Icons]
 ; JengaDevTray.exe is the actual entry point now, not JengaDev.exe directly.
