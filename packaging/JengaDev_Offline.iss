@@ -1,10 +1,10 @@
 [Setup]
 AppName=JengaDev
-AppVersion=1.0.40
+AppVersion=1.0.41
 DefaultDirName=C:\JengaDev
 DefaultGroupName=JengaDev
 OutputDir={#GetEnv("USERPROFILE")}\Desktop
-OutputBaseFilename=JengaDev_Setup_Full_v1.0.40
+OutputBaseFilename=JengaDev_Setup_Full_v1.0.41
 Compression=lzma2/ultra
 SolidCompression=yes
 SetupIconFile=D:\Projects\safuweb\nexus\JengaDev.ico
@@ -44,7 +44,7 @@ begin
   
   S := S + 'The following components will be installed:' + NewLine;
   S := S + Space + '• JengaDev Core Engine & Dashboard' + NewLine;
-  S := S + Space + '• Caddy Web Server' + NewLine;
+  S := S + Space + '• Caddy Web Server (automatic local HTTPS)' + NewLine;
   S := S + Space + '• PHP FastCGI' + NewLine;
   S := S + Space + '• MySQL (MariaDB 11.2)' + NewLine;
   S := S + Space + '• PostgreSQL 16.2' + NewLine;
@@ -254,6 +254,25 @@ begin
     WizardForm.StatusLabel.Caption := 'Configuring auto-start settings...';
     PsCmd := '-ExecutionPolicy Bypass -WindowStyle Hidden -Command "$services = @(''mysql'', ''postgres'', ''mailpit''); ';
     PsCmd := PsCmd + 'if (!(Test-Path ''' + ExpandConstant('{app}\config\first_run_autostart.json') + ''')) { ConvertTo-Json @($services) | Out-File -FilePath ''' + ExpandConstant('{app}\config\first_run_autostart.json') + ''' -Encoding utf8 } "';
+    Exec('powershell.exe', PsCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+end;
+
+// Remove JengaDev's local HTTPS root CA (Caddy's local authority, kept in
+// {app}\data\caddy) from the Windows trust stores on uninstall - the daemon
+// adds it to LocalMachine\Root on first run, and a trusted root left behind
+// after the app is gone would be a needless standing trust grant. Matched by
+// thumbprint so it can never touch any other Caddy/mkcert root on the box.
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  PsCmd: String;
+  ResultCode: Integer;
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    PsCmd := '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command "$p = ''' + ExpandConstant('{app}\data\caddy\pki\authorities\local\root.crt') + '''; ' +
+             'if (Test-Path $p) { $c = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($p); ' +
+             'Get-ChildItem Cert:\LocalMachine\Root, Cert:\CurrentUser\Root | Where-Object { $_.Thumbprint -eq $c.Thumbprint } | Remove-Item -Force -ErrorAction SilentlyContinue }"';
     Exec('powershell.exe', PsCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;

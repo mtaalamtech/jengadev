@@ -424,12 +424,30 @@ app.post('/api/mailpit/config', async (req, res) => {
 // that needs a cert from an actual CA (internal corporate CA, or anywhere
 // automatic ACME isn't viable), not local dev domains. A domain with an
 // uploaded cert gets an explicit `tls cert key` block instead of Caddy's
-// automatic handling; everything else keeps using automatic local HTTPS
-// same as before - stricter than Windows, which disables Caddy's
-// automatic certs globally and requires this flow for every domain.
+// automatic handling; everything else keeps using automatic local HTTPS,
+// same as Windows.
 // (sslDir/sslStatePath/getSslState/saveSslState are declared up near the
 // other path constants - rebuildCaddyfile needs them at startup, before
 // this section of the file even runs.)
+
+// Caddy's local root CA lives inside the caddy_data volume. Browsers only
+// stop warning once that root is trusted - on this machine (./trust-ca.sh)
+// or, for a headless dev server, on whichever machine the browser runs on -
+// so the dashboard offers it as a download.
+const CADDY_ROOT_CA_IN_CONTAINER = '/data/caddy/pki/authorities/local/root.crt';
+app.get('/api/ssl/local-ca', (req, res) => {
+  exec(`docker exec jengadev_caddy cat ${CADDY_ROOT_CA_IN_CONTAINER}`, (err, stdout) => {
+    if (err || !stdout.includes('BEGIN CERTIFICATE')) {
+      return res.json({ success: true, exists: false });
+    }
+    if (req.query.download === '1') {
+      res.setHeader('Content-Type', 'application/x-x509-ca-cert');
+      res.setHeader('Content-Disposition', 'attachment; filename="jengadev-local-ca.crt"');
+      return res.send(stdout);
+    }
+    res.json({ success: true, exists: true });
+  });
+});
 
 app.get('/api/ssl/list', (req, res) => {
   const sslState = getSslState();

@@ -527,6 +527,30 @@ async function saveMailpitConfig() {
 // --- SSL tools ---
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
+// The daemon token travels in a header (see the fetch wrapper at the top),
+// so the certificate is fetched here and handed to the browser as a blob
+// rather than linked directly - a plain <a href> couldn't authenticate.
+async function downloadLocalCa() {
+  try {
+    const res = await fetch(`${API_BASE}/ssl/local-ca?download=1`);
+    const type = res.headers.get('Content-Type') || '';
+    if (!res.ok || type.includes('json')) {
+      showToast('The local certificate does not exist yet - start Caddy and open one https:// site first.', true);
+      return;
+    }
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'jengadev-local-ca.crt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    showToast('Error downloading the local certificate', true);
+  }
+}
+
 async function fetchSslList() {
   try {
     const res = await fetch(`${API_BASE}/ssl/list`);

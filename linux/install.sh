@@ -156,3 +156,8 @@ if [ -f "$TOKEN_FILE" ]; then
 else
   echo "Couldn't find the daemon token yet - check: journalctl --user -u jengadev -n 20"
 fi
+
+echo
+echo "Local HTTPS: every host is served at https://<name>.localhost. To stop"
+echo "browser certificate warnings, trust JengaDev's local CA once (after"
+echo "starting Caddy and creating a host):  ./trust-ca.sh"

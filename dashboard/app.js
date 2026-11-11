@@ -70,7 +70,11 @@ function activateTab(tabId) {
     if (tabId === 'hosts') {
         fetchHosts();
     }
-    
+
+    if (tabId === 'ssl') {
+        fetchLocalCa();
+    }
+
     if (tabId === 'mailpit') {
         const iframe = document.getElementById('mailpit-iframe');
         if (iframe) iframe.src = iframe.src;
@@ -772,6 +776,45 @@ async function restoreMysql() {
     }
 }
 
+// Local HTTPS CA (Caddy's local certificate authority) trust status
+async function fetchLocalCa() {
+    const statusEl = document.getElementById('local-ca-status');
+    const btn = document.getElementById('local-ca-trust-btn');
+    if (!statusEl || !btn) return;
+    try {
+        const res = await fetch(`${API_BASE}/ssl/local-ca`);
+        const data = await res.json();
+        if (!data.exists) {
+            statusEl.textContent = 'Not created yet - it is generated automatically the first time the Web Server (Caddy) starts.';
+            btn.style.display = 'none';
+        } else if (data.trusted) {
+            statusEl.innerHTML = '<span style="color:var(--success, #22c55e);">&#10003; Trusted by Windows</span> - every host opens on https:// with no browser warning.';
+            btn.style.display = 'none';
+        } else {
+            statusEl.innerHTML = '<span style="color:var(--warning, #f59e0b);">Not trusted yet</span> - browsers will warn on https:// until you trust it (one Windows permission prompt).';
+            btn.style.display = '';
+        }
+    } catch (e) {
+        statusEl.textContent = 'Could not read the local certificate status.';
+    }
+}
+
+async function trustLocalCa() {
+    const btn = document.getElementById('local-ca-trust-btn');
+    btn.disabled = true;
+    btn.textContent = 'Waiting for Windows prompt...';
+    try {
+        const res = await fetch(`${API_BASE}/ssl/local-ca/trust`, { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message, !data.success);
+    } catch (e) {
+        showToast('Error trusting the local certificate', true);
+    }
+    btn.disabled = false;
+    btn.textContent = 'Trust certificate';
+    fetchLocalCa();
+}
+
 // SSL Generator & Management
 async function fetchSslList() {
     try {
@@ -1055,9 +1098,11 @@ async function fetchHosts() {
 
 function showHostDetail(name, domain, hostPath, sizeBytes, stackStr, sqliteDbs = []) {
     document.getElementById('detail-host-name').innerText = name;
-    const p = SYS_PORTS.caddy_http === 80 ? '' : `:${SYS_PORTS.caddy_http}`;
-    document.getElementById('detail-host-url').innerText = `http://${domain}${p}`;
-    document.getElementById('detail-host-url').href = `http://${domain}${p}`;
+    // Every host is served over HTTPS by Caddy's local CA (plain http:// still
+    // works too), so link to the https:// URL.
+    const p = SYS_PORTS.caddy_https === 443 ? '' : `:${SYS_PORTS.caddy_https}`;
+    document.getElementById('detail-host-url').innerText = `https://${domain}${p}`;
+    document.getElementById('detail-host-url').href = `https://${domain}${p}`;
     document.getElementById('detail-host-path').innerText = hostPath;
     
     // Format Size
@@ -1272,6 +1317,7 @@ fetchStatus();
 fetchLogs();
 fetchPerformance();
 fetchSslList();
+fetchLocalCa();
 loadPhpConfig();
 loadMysqlConfig();
 fetchMailpitConfig();

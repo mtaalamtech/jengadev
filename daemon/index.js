@@ -33,7 +33,7 @@ console.error = safeConsole(console.error.bind(console));
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.40';
+const APP_VERSION = '1.0.41';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -54,6 +54,12 @@ if (!fs.existsSync(configDir)) fs.mkdirSync(configDir);
 if (!fs.existsSync(sslDir)) fs.mkdirSync(sslDir);
 if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
 const sslStatePath = path.join(configDir, 'ssl_state.json');
+// Caddy's local CA lives here (see the `storage` option in rebuildCaddyfile),
+// so its root certificate has a known location the daemon can trust and the
+// uninstaller can find and remove again.
+const caddyStorageDir = path.join(dataDir, 'caddy');
+const caddyRootCertPath = path.join(caddyStorageDir, 'pki', 'authorities', 'local', 'root.crt');
+const localCaStatePath = path.join(configDir, 'local_ca_trust.json');
 
 // This process is always launched with CreateNoWindow=true (see
 // JengaDevTray.cs), so there's never a console visible to catch a crash on
@@ -478,12 +484,7 @@ app.post('/api/hosts/delete', async (req, res) => {
       
       setTimeout(() => {
         rebuildCaddyfile();
-        if (pm.processes['caddy']) {
-          pm.stop('caddy');
-          setTimeout(() => {
-            pm.start('caddy', path.join(binDir, 'caddy.exe'), ['run', '--config', path.join(appRoot, 'Caddyfile')], binDir);
-          }, 1000);
-        }
+        restartCaddy();
       }, 100);
     } else {
       res.status(404).json({ success: false, message: 'Host not found' });
@@ -529,12 +530,7 @@ app.post('/api/hosts/create', async (req, res) => {
     
     setTimeout(() => {
       rebuildCaddyfile();
-      if (pm.processes['caddy']) {
-        pm.stop('caddy');
-        setTimeout(() => {
-          pm.start('caddy', path.join(binDir, 'caddy.exe'), ['run', '--config', path.join(appRoot, 'Caddyfile')], binDir);
-        }, 1000);
-      }
+      restartCaddy();
     }, 100);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -968,12 +964,7 @@ app.post('/api/mailpit/config', (req, res) => {
     
     // Rebuild Caddyfile so mailpit.jengadev reflects the new port
     rebuildCaddyfile();
-    if (pm.processes['caddy']) {
-        pm.stop('caddy');
-        setTimeout(() => {
-            pm.start('caddy', path.join(binDir, 'caddy', 'caddy.exe'), ['run', '--config', path.join(appRoot, 'Caddyfile')], path.join(binDir, 'caddy'));
-        }, 1000);
-    }
+    restartCaddy();
     
     res.json({ success: true, message: 'Mailpit configuration saved' });
 });
@@ -1234,12 +1225,10 @@ app.post('/api/start', async (req, res) => {
   if (!service) return res.status(400).json({ error: 'Service name required' });
 
   if (service === 'caddy') {
-    const caddyExe = path.join(binDir, 'caddy.exe');
-    const caddyfile = path.join(appRoot, 'Caddyfile');
-    if (!fs.existsSync(caddyExe)) {
+    if (!fs.existsSync(path.join(binDir, 'caddy.exe'))) {
       return res.status(400).json({ success: false, message: 'Caddy executable not found in bin/' });
     }
-    const result = pm.start('caddy', caddyExe, ['run', '--config', caddyfile], binDir);
+    const result = startCaddy();
     // When starting Caddy, sync hosts automatically
     hostsManager.sync().catch(console.error);
     return res.json(result);
@@ -1781,10 +1770,20 @@ function rebuildCaddyfile() {
     try { sslState = JSON.parse(fs.readFileSync(sslStatePath, 'utf8')); } catch(e) {}
   }
   
+  // Every host gets HTTPS from Caddy's own local CA (local_certs), stored
+  // under data/caddy so the root cert's location is fixed and the daemon
+  // can trust it itself (ensureLocalCaTrusted) - skip_install_trust stays
+  // because Caddy's built-in trust install would target whichever user
+  // account Caddy happens to run as, with no way to report back whether
+  // it worked. Each host is served on BOTH http:// and https:// with no
+  // forced redirect (disable_redirects): an app with an http:// base URL
+  // stored in its database (WordPress siteurl being the classic case) would
+  // otherwise bounce between the two schemes forever.
   let caddyConfig = `{
   skip_install_trust
-  auto_https disable_certs
   local_certs
+  auto_https disable_redirects
+  storage file_system "${caddyStorageDir.replace(/\\/g, '/')}"
   http_port ${ports.caddy_http}
   https_port ${ports.caddy_https}
 }
@@ -1821,42 +1820,115 @@ http://mailpit.jengadev {
 }
 `;
 
-  // Custom SSL blocks
-  const customDomains = [];
-  for (const [domain, state] of Object.entries(sslState)) {
-    if (state.status === 'active' && fs.existsSync(state.cert_path) && fs.existsSync(state.key_path)) {
-      customDomains.push(domain);
-      caddyConfig += `\nhttps://${domain} {
-  tls "${state.cert_path.replace(/\\/g, '/')}" "${state.key_path.replace(/\\/g, '/')}"
-  root * "${path.join(wwwDir, domain.replace('.test', '')).replace(/\\/g, '/')}"
-  php_fastcgi 127.0.0.1:${ports.php}
-  file_server
-  log {
-    output file "${path.join(logsDir, 'access.log').replace(/\\/g, '/')}"
-  }
-}
-`;
-    }
-  }
-  
-  // Generate explicit blocks for all folders to prevent wildcard parsing errors
+  // One explicit block per host folder (prevents wildcard parsing errors),
+  // served on both schemes. A domain with an uploaded, active certificate
+  // (SSL Tools) uses that cert; every other host gets one from the local CA.
   const folders = fs.existsSync(wwwDir) ? fs.readdirSync(wwwDir).filter(f => fs.statSync(path.join(wwwDir, f)).isDirectory()) : [];
   for (const folder of folders) {
       const domain = folder.includes('.') ? folder : `${folder}.test`;
-      if (!customDomains.includes(domain)) {
-          caddyConfig += `\nhttp://${domain} {
-  root * "${path.join(wwwDir, folder).replace(/\\/g, '/')}"
+      const state = sslState[domain];
+      const hasCustomCert = state && state.status === 'active' && state.cert_path && state.key_path && fs.existsSync(state.cert_path) && fs.existsSync(state.key_path);
+      const tlsLine = hasCustomCert ? `  tls "${state.cert_path.replace(/\\/g, '/')}" "${state.key_path.replace(/\\/g, '/')}"\n` : '';
+      caddyConfig += `\nhttp://${domain}, https://${domain} {
+${tlsLine}  root * "${path.join(wwwDir, folder).replace(/\\/g, '/')}"
   php_fastcgi 127.0.0.1:${ports.php}
   file_server
   log {
     output file "${path.join(logsDir, 'access.log').replace(/\\/g, '/')}"
   }
 }\n`;
-      }
   }
   
   fs.writeFileSync(caddyfilePath, caddyConfig.trim());
 };
+
+// Every Caddy (re)start goes through these two, so each one also gets the
+// local-CA trust check - and so there's exactly one place that knows where
+// caddy.exe lives (a copy of this used to point at bin\caddy\caddy.exe,
+// which doesn't exist, breaking Caddy restarts after a Mailpit port change).
+function startCaddy() {
+  // Always start from a freshly generated config, so an upgrade's Caddyfile
+  // changes (e.g. HTTPS for every host) take effect on the first start
+  // instead of only after the next host is created or deleted.
+  rebuildCaddyfile();
+  const result = pm.start('caddy', path.join(binDir, 'caddy.exe'), ['run', '--config', path.join(appRoot, 'Caddyfile')], binDir);
+  ensureLocalCaTrusted().catch(e => console.error('Local CA trust check failed:', e.message));
+  return result;
+}
+function restartCaddy() {
+  if (!pm.processes['caddy']) return;
+  pm.stop('caddy');
+  setTimeout(startCaddy, 1000);
+}
+
+// --- Local HTTPS CA trust (Windows) ---
+// Caddy creates its local root CA lazily, the first time it has an https://
+// site to serve, so after each start we wait briefly for root.crt to appear,
+// then make sure Windows trusts it (LocalMachine\Root, which Chrome, Edge
+// and other Windows-store-based clients honor). Adding a trusted root needs
+// admin rights, so this raises one UAC prompt - same pattern as the hosts
+// file. If the prompt is declined we remember that per-certificate and stop
+// asking on every restart; the SSL Tools tab has a button to retry.
+function readLocalCa() {
+  if (!fs.existsSync(caddyRootCertPath)) return null;
+  try {
+    const cert = new crypto.X509Certificate(fs.readFileSync(caddyRootCertPath));
+    return { thumbprint: cert.fingerprint.replace(/:/g, '').toUpperCase(), subject: cert.subject, validTo: cert.validTo };
+  } catch (e) { return null; }
+}
+function isLocalCaTrusted(thumbprint) {
+  return new Promise((resolve) => {
+    const ps = `if ((Test-Path 'Cert:\\LocalMachine\\Root\\${thumbprint}') -or (Test-Path 'Cert:\\CurrentUser\\Root\\${thumbprint}')) { 'yes' } else { 'no' }`;
+    exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${ps}"`, { windowsHide: true }, (err, stdout) => {
+      resolve(!err && /yes/.test(stdout));
+    });
+  });
+}
+function readLocalCaState() {
+  try { return JSON.parse(fs.readFileSync(localCaStatePath, 'utf8')); } catch (e) { return {}; }
+}
+let localCaTrustInFlight = null;
+function ensureLocalCaTrusted({ force = false } = {}) {
+  if (process.platform !== 'win32') return Promise.resolve({ success: false, message: 'Not supported on this platform' });
+  if (localCaTrustInFlight) return localCaTrustInFlight;
+  localCaTrustInFlight = (async () => {
+    // Wait up to ~20s for Caddy to generate the CA on first run.
+    let ca = readLocalCa();
+    for (let i = 0; !ca && i < 20; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      ca = readLocalCa();
+    }
+    if (!ca) return { success: false, message: 'Local CA not created yet - start the Web Server (Caddy) first.' };
+    if (await isLocalCaTrusted(ca.thumbprint)) {
+      fs.writeFileSync(localCaStatePath, JSON.stringify({ thumbprint: ca.thumbprint, trusted: true }, null, 2));
+      return { success: true, trusted: true, message: 'Local HTTPS certificate is already trusted.' };
+    }
+    const state = readLocalCaState();
+    if (!force && state.thumbprint === ca.thumbprint && state.declined) {
+      return { success: false, trusted: false, message: 'Trust was declined earlier - use "Trust certificate" in SSL Tools to retry.' };
+    }
+    const certPathPs = caddyRootCertPath.replace(/'/g, "''");
+    const inner = `certutil -addstore -f Root '${certPathPs}'`;
+    const encoded = Buffer.from(inner, 'utf16le').toString('base64');
+    const uacCmd = `powershell -NoProfile -Command "Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand ${encoded}' -Verb RunAs -Wait -WindowStyle Hidden"`;
+    await new Promise((resolve) => exec(uacCmd, { windowsHide: true }, () => resolve()));
+    const trusted = await isLocalCaTrusted(ca.thumbprint);
+    fs.writeFileSync(localCaStatePath, JSON.stringify({ thumbprint: ca.thumbprint, trusted, declined: !trusted }, null, 2));
+    return trusted
+      ? { success: true, trusted: true, message: 'Local HTTPS certificate trusted - restart your browser if a site still shows a warning.' }
+      : { success: false, trusted: false, message: 'The certificate was not trusted (was the Windows permission prompt declined?).' };
+  })().finally(() => { localCaTrustInFlight = null; });
+  return localCaTrustInFlight;
+}
+
+app.get('/api/ssl/local-ca', async (req, res) => {
+  const ca = readLocalCa();
+  if (!ca) return res.json({ success: true, exists: false, trusted: false });
+  res.json({ success: true, exists: true, trusted: await isLocalCaTrusted(ca.thumbprint), subject: ca.subject, validTo: ca.validTo, path: caddyRootCertPath });
+});
+app.post('/api/ssl/local-ca/trust', async (req, res) => {
+  res.json(await ensureLocalCaTrusted({ force: true }));
+});
 
 // Generates a small PHP script that redirects error_log to a per-host file based on
 // the request's Host header (the standard trick for giving each vhost its own error
@@ -2046,14 +2118,7 @@ app.post('/api/ssl/upload', (req, res) => {
     
     // Rebuild Caddy and restart if running
     rebuildCaddyfile();
-    if (pm.processes['caddy']) {
-      pm.stop('caddy');
-      setTimeout(() => {
-        const caddyExe = path.join(binDir, 'caddy.exe');
-        const caddyfile = path.join(appRoot, 'Caddyfile');
-        pm.start('caddy', caddyExe, ['run', '--config', caddyfile], binDir);
-      }, 1000);
-    }
+    restartCaddy();
     
     res.json({ success: true, message: 'Certificate uploaded and activated' });
   } catch (err) {

@@ -473,6 +473,15 @@
           <strong>How it works:</strong> Generate a CSR &rarr; download and send to your CA (e.g. DigiCert, ZeroSSL) &rarr; upload the signed certificate back &rarr; it will be available for use in Caddy. To renew, click Renew on an active cert &rarr; a fresh CSR is generated with the same domain details.
           <br><span style="color:var(--muted);">Note: Caddy already auto-issues local HTTPS for every host below with no setup at all - this is only needed for a cert from a real external CA.</span>
         </div>
+        <div class="card" id="local-ca-card" style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+          <div>
+            <div style="font-weight:600; margin-bottom:4px;">Local HTTPS certificate</div>
+            <div id="local-ca-status" style="font-size:13px; color:var(--muted);">
+              To stop browser warnings on https://, trust JengaDev's local certificate authority once: run <code>./trust-ca.sh</code> in your <code>jengadev/linux</code> folder on this machine, or download the certificate and import it on the machine your browser runs on.
+            </div>
+          </div>
+          <button class="btn btn-primary" id="local-ca-download-btn" onclick="downloadLocalCa()" style="white-space:nowrap;">Download certificate</button>
+        </div>
         <div class="card" style="padding:0; overflow:hidden; margin-bottom:0;">
           <table class="ssl-table">
             <thead>

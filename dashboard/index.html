@@ -199,7 +199,7 @@
                             <h3 id="detail-host-name" style="margin-bottom: 20px; font-size:1.4rem;">Host Name</h3>
                             <div class="setting-row">
                                 <label>Domain</label>
-                                <span><a href="#" id="detail-host-url" target="_blank" style="color:var(--accent);text-decoration:none;">http://name.test</a></span>
+                                <span><a href="#" id="detail-host-url" target="_blank" style="color:var(--accent);text-decoration:none;">https://name.test</a></span>
                             </div>
                             <div class="setting-row">
                                 <label>Document Root</label>
@@ -525,10 +525,18 @@
                     <div class="pane-header">
                         <h2>SSL Tools</h2>
                         <p style="font-size: 13px; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-top: 5px;">
-                            <strong>How it works:</strong> Generate a CSR &rarr; download and send to your CA (e.g. DigiCert, ZeroSSL) &rarr; upload the signed certificate back &rarr; it will be available for use in Caddy. To renew, click Renew on an active cert &rarr; a fresh CSR is generated with the same domain details.
+                            <strong>Local HTTPS is automatic:</strong> every host is served at <code>https://name.test</code> with a certificate from JengaDev's own local certificate authority. The table below is only for real domains that need a certificate from an external CA: generate a CSR &rarr; send it to your CA (e.g. DigiCert, ZeroSSL) &rarr; upload the signed certificate back. To renew, click Renew on an active cert.
                         </p>
                     </div>
-                    
+
+                    <div class="card" id="local-ca-card" style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px;">
+                        <div>
+                            <div style="font-weight:600; margin-bottom:4px;">Local HTTPS certificate</div>
+                            <div id="local-ca-status" style="font-size:13px; color:var(--text-muted);">Checking&hellip;</div>
+                        </div>
+                        <button class="btn btn-primary" id="local-ca-trust-btn" onclick="trustLocalCa()" style="display:none; white-space:nowrap;">Trust certificate</button>
+                    </div>
+
                     <div class="card" style="padding:0; overflow:hidden;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
                             <thead style="background: rgba(0,0,0,0.2); font-size: 13px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.1);">

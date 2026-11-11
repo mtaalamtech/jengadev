@@ -27,7 +27,7 @@ JengaDev gives you both for free, out of the box:
 
 ## Features
 
-- **One-click local HTTPS** for every hosted site via Caddy — no manual certificate setup.
+- **Automatic local HTTPS** for every hosted site — Caddy issues each host a certificate from JengaDev's own local certificate authority, so `https://name.test` just works (plain `http://` keeps working too). On Windows, JengaDev trusts that authority for you the first time the web server starts (one Windows permission prompt); on Linux, run `./trust-ca.sh` once. No mkcert, no manual certificate setup.
 - **Multiple databases** — MySQL/MariaDB, PostgreSQL, and SQLite, each with an admin UI (phpMyAdmin/Adminer).
 - **Mailpit built in** — catch and inspect outgoing mail from every hosted site without touching a real SMTP server.
 - **Per-host PHP error logs** with automatic size-based rotation, so logs stay manageable as the number of sites grows.
@@ -62,9 +62,13 @@ Requires only Docker (the script installs it for you on Debian/Ubuntu and Fedora
 
 Composer is bundled in the PHP containers - run it against your project with, e.g., `docker compose exec php83 composer install`.
 
+Every host is served at `https://<name>.localhost` with a certificate from Caddy's local certificate authority. To stop browser warnings, trust that authority once with `./trust-ca.sh` (adds it to the system store and to Chrome/Firefox's certificate databases; needs `libnss3-tools`/`nss-tools` for the browser part). On a headless dev server, use the dashboard's **SSL Tools → Download certificate** instead and import it on the machine your browser runs on.
+
 ## Security
 
-JengaDev went through a structured security review before this repository went public — authentication on every dashboard API call, checksum-verified downloads for every third-party component it fetches, and a locked-down install directory so other accounts on a shared machine can't tamper with it. Found a security issue? Please open a private security advisory on this repo rather than a public issue.
+JengaDev went through a structured security review before this repository went public — authentication on every dashboard API call, checksum-verified downloads for every third-party component it fetches, and a locked-down install directory so other accounts on a shared machine can't tamper with it.
+
+Local HTTPS works by trusting a root certificate authority that is generated on your machine and never leaves it (`data\caddy\pki\` on Windows, the `caddy_data` Docker volume on Linux). Anyone who could read its private key could issue certificates your browser trusts, so treat that folder like any other credential. The Windows uninstaller removes the authority from the Windows trust store again. Found a security issue? Please open a private security advisory on this repo rather than a public issue.
 
 ## OS compatibility notes
 
