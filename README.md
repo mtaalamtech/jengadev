@@ -79,7 +79,7 @@ When a bug report says "only on Windows 11" / "only on this one machine" / "work
 
 ## Third-party components
 
-On Windows, JengaDev bundles or downloads Caddy, PHP,Composer, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, and Node.js, each under its own license, plus a set of permissively-licensed npm packages. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for the full list. On Linux, those same components run as official upstream Docker images instead of bundled binaries - see each image's own listing on Docker Hub/GHCR for its license.
+On Windows, JengaDev bundles or downloads Caddy, PHP, Composer, MariaDB, PostgreSQL, phpMyAdmin, Adminer, Mailpit, and Node.js, each under its own license, plus a set of permissively-licensed npm packages. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for the full list. On Linux, those same components run as official upstream Docker images instead of bundled binaries - see each image's own listing on Docker Hub/GHCR for its license.
 
 ## License
 
