@@ -33,7 +33,7 @@ console.error = safeConsole(console.error.bind(console));
 
 // Bump this alongside JengaDev_Offline.iss's OutputBaseFilename on every
 // release - it's what /api/update/check compares against the update feed.
-const APP_VERSION = '1.0.41';
+const APP_VERSION = '1.0.42';
 
 // Under pkg, __dirname resolves inside the read-only virtual snapshot, not the
 // real install directory next to the exe. Resolve every on-disk path (config,
@@ -934,6 +934,29 @@ app.post('/api/php/config', (req, res) => {
 });
 // ==============================
 
+// Start-on-launch preferences: which services the daemon starts by itself
+// when JengaDev launches (e.g. from the Windows login shortcut), so nobody
+// has to open the dashboard just to press Start.
+const AUTOSTART_SERVICES = ['caddy', 'php', 'mysql', 'postgres', 'mailpit'];
+function getAutostart() {
+  const saved = getConfig().autostart || {};
+  const out = {};
+  for (const s of AUTOSTART_SERVICES) out[s] = saved[s] === true;
+  return out;
+}
+app.get('/api/autostart', (req, res) => res.json(getAutostart()));
+app.post('/api/autostart', (req, res) => {
+  const body = req.body || {};
+  const next = getAutostart();
+  for (const s of AUTOSTART_SERVICES) {
+    if (typeof body[s] === 'boolean') next[s] = body[s];
+  }
+  const config = getConfig();
+  config.autostart = next;
+  saveConfig(config);
+  res.json({ success: true, autostart: next });
+});
+
 // Mailpit Integration
 app.get('/api/mailpit/config', (req, res) => {
     const config = getConfig();
@@ -1778,7 +1801,9 @@ function rebuildCaddyfile() {
   // it worked. Each host is served on BOTH http:// and https:// with no
   // forced redirect (disable_redirects): an app with an http:// base URL
   // stored in its database (WordPress siteurl being the classic case) would
-  // otherwise bounce between the two schemes forever.
+  // otherwise bounce between the two schemes forever. The built-in tools
+  // (Adminer, phpMyAdmin, Mailpit) follow the same rule, so the dashboard
+  // can open them on https:// like any other host.
   let caddyConfig = `{
   skip_install_trust
   local_certs
@@ -1797,7 +1822,7 @@ http://localhost, http://127.0.0.1 {
   }
 }
 
-http://adminer.jengadev {
+http://adminer.jengadev, https://adminer.jengadev {
   root * "${path.join(binDir, 'adminer').replace(/\\/g, '/')}"
   php_fastcgi 127.0.0.1:${ports.php}
   file_server
@@ -1806,7 +1831,7 @@ http://adminer.jengadev {
   }
 }
 
-http://phpmyadmin.jengadev {
+http://phpmyadmin.jengadev, https://phpmyadmin.jengadev {
   root * "${path.join(binDir, 'phpmyadmin').replace(/\\/g, '/')}"
   php_fastcgi 127.0.0.1:${ports.php}
   file_server
@@ -1815,7 +1840,7 @@ http://phpmyadmin.jengadev {
   }
 }
 
-http://mailpit.jengadev {
+http://mailpit.jengadev, https://mailpit.jengadev {
   reverse_proxy 127.0.0.1:${ports.mailpit_web}
 }
 `;
@@ -2292,30 +2317,39 @@ const serverInstance = app.listen(daemonPort, '127.0.0.1', () => {
     } catch (e) {}
   }
 
-  // Post-install auto-start
+  // Services to start now: the one-off post-install list (if the installer
+  // left one) plus every service ticked under "Start on launch" on Overview.
+  const toStart = new Set();
   const autostartFile = path.join(configDir, 'first_run_autostart.json');
   if (fs.existsSync(autostartFile)) {
     try {
       const services = JSON.parse(fs.readFileSync(autostartFile, 'utf8'));
       fs.unlinkSync(autostartFile);
-      
-      const startService = async (service) => {
-        try {
-          await fetch(`http://127.0.0.1:${daemonPort}/api/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-JengaDev-Token': DAEMON_TOKEN },
-            body: JSON.stringify({ service })
-          });
-        } catch (e) {
-          console.error(`Auto-start failed for ${service}:`, e.message);
-        }
-      };
-      
-      // Always start Caddy first
-      startService('caddy').then(() => {
-        services.forEach(startService);
-      });
+      toStart.add('caddy'); // post-install always brings the web server up
+      if (Array.isArray(services)) services.forEach(s => toStart.add(s));
     } catch(e) {}
+  }
+  const autostart = getAutostart();
+  for (const s of AUTOSTART_SERVICES) if (autostart[s]) toStart.add(s);
+
+  if (toStart.size > 0) {
+    const startService = async (service) => {
+      try {
+        await fetch(`http://127.0.0.1:${daemonPort}/api/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-JengaDev-Token': DAEMON_TOKEN },
+          body: JSON.stringify({ service })
+        });
+      } catch (e) {
+        console.error(`Auto-start failed for ${service}:`, e.message);
+      }
+    };
+    // Caddy first, then the rest one at a time so their startup work
+    // (PHP config writes, DB init) doesn't overlap.
+    (async () => {
+      if (toStart.has('caddy')) await startService('caddy');
+      for (const s of toStart) if (s !== 'caddy') await startService(s);
+    })();
   }
 });
 

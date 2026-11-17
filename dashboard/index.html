@@ -26,8 +26,9 @@
             </div>
             <div class="toolbar-right">
                 <div class="header-links" style="display: flex; gap: 15px; margin-right: 20px; align-items: center;">
-                    <a id="top-btn-phpmyadmin" href="http://phpmyadmin.jengadev" target="_blank" class="btn" style="display: none; background: #3b82f6; color: white;"><i class="fas fa-database"></i> phpMyAdmin</a>
+                    <a id="top-btn-phpmyadmin" href="https://phpmyadmin.jengadev" target="_blank" class="btn" style="display: none; background: #3b82f6; color: white;"><i class="fas fa-database"></i> phpMyAdmin</a>
                     <a id="top-btn-adminer" href="#" onclick="openAdminer(); return false;" class="btn" style="display: none; background: #10b981; color: white;"><i class="fas fa-server"></i> Adminer</a>
+                    <a id="top-btn-mailpit" href="https://mailpit.jengadev" target="_blank" rel="noopener" class="btn" style="display: none; background: #ef4444; color: white;"><i class="fas fa-envelope"></i> Mailpit</a>
                 </div>
                 <button class="btn btn-secondary" id="btn-stop-all">Stop All</button>
                 <button class="btn btn-primary" id="btn-start-all">Start All</button>
@@ -149,6 +150,19 @@
                                     <div id="perf-mailpit-bar" style="height:100%; width:0%; background:#ef4444; transition:width 0.3s;"></div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="settings-card" id="autostart-card" style="flex: 0 0 280px; padding: 15px;">
+                            <h3 style="margin-top:0; margin-bottom: 6px; font-size:1.1rem; border-bottom:1px solid var(--border); padding-bottom:10px;">Start on launch</h3>
+                            <p style="color:var(--text-muted); font-size:0.85rem; margin: 8px 0 12px;">Ticked services start automatically whenever JengaDev starts, including at Windows login.</p>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:6px 0; font-weight:600; border-bottom:1px solid var(--border); margin-bottom:6px; cursor:pointer;">
+                                <input type="checkbox" id="autostart-all"> Start all services
+                            </label>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer;"><input type="checkbox" class="autostart-cb" data-service="caddy"> Web Server (Caddy)</label>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer;"><input type="checkbox" class="autostart-cb" data-service="php"> PHP</label>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer;"><input type="checkbox" class="autostart-cb" data-service="mysql"> MySQL</label>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer;"><input type="checkbox" class="autostart-cb" data-service="postgres"> PostgreSQL</label>
+                            <label class="autostart-row" style="display:flex; align-items:center; gap:10px; padding:5px 0; cursor:pointer;"><input type="checkbox" class="autostart-cb" data-service="mailpit"> Mailpit</label>
                         </div>
                     </div>
 

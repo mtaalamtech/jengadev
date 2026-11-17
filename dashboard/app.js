@@ -201,9 +201,14 @@ function updateStatusUI(services) {
         const btnInstall = document.getElementById('btn-install-mailpit');
         const btnStart = document.getElementById('btn-start-mailpit');
         const btnStop = document.getElementById('btn-stop-mailpit');
+        const btnOpen = document.getElementById('top-btn-mailpit');
         const mailpitIframe = document.getElementById('mailpit-iframe-container');
         const mailpitSettings = document.getElementById('mailpit-settings-container');
-        
+        if (btnOpen) {
+            btnOpen.href = toolUrl('mailpit');
+            btnOpen.style.display = mailpitRunning ? 'inline-block' : 'none';
+        }
+
         if (mailpitRunning) {
             if (btnInstall) btnInstall.style.display = 'none';
             if (btnStart) btnStart.style.display = 'none';
@@ -275,6 +280,7 @@ function updateStatusUI(services) {
         const btnAdminer = document.getElementById('top-btn-adminer');
         
         if (btnPhpMyAdmin && btnAdminer) {
+            btnPhpMyAdmin.href = toolUrl('phpmyadmin');
             if (dbRunning) {
                 btnPhpMyAdmin.style.display = (services.mysql === 'running') ? 'inline-block' : 'none';
                 btnAdminer.style.display = 'inline-block';
@@ -395,13 +401,19 @@ async function installPostgres() {
     }
 }
 
+// Built-in tools (adminer, phpmyadmin, mailpit) are Caddy hosts under .jengadev,
+// served over HTTPS from the same local CA as every .test site.
+function toolUrl(tool) {
+    const p = SYS_PORTS.caddy_https === 443 ? '' : `:${SYS_PORTS.caddy_https}`;
+    return `https://${tool}.jengadev${p}`;
+}
+
 async function openAdminer() {
     showToast('Opening Adminer...', false);
     // Trigger Adminer install if needed, then open window
     try {
         await fetch(`${API_BASE}/adminer/install`, { method: 'POST' });
-        const p = SYS_PORTS.caddy_http === 80 ? '' : `:${SYS_PORTS.caddy_http}`;
-        window.open(`http://adminer.jengadev${p}`, '_blank');
+        window.open(toolUrl('adminer'), '_blank');
     } catch(e) {
         showToast('Failed to install Adminer', true);
     }
@@ -457,6 +469,60 @@ document.getElementById('btn-start-all').addEventListener('click', () => {
         setTimeout(() => performServiceAction(svc, '/start'), idx * 500);
     });
 });
+
+// --- Start on launch (Overview card) ---
+// Saved in jengadev.json; the daemon starts the ticked services itself on
+// launch, so the dashboard doesn't need to be open for it to work.
+function syncAutostartAll() {
+    const boxes = [...document.querySelectorAll('.autostart-cb')];
+    const all = document.getElementById('autostart-all');
+    if (!all) return;
+    const on = boxes.filter(b => b.checked).length;
+    all.checked = on === boxes.length;
+    all.indeterminate = on > 0 && on < boxes.length;
+}
+
+async function fetchAutostart() {
+    try {
+        const res = await fetch(`${API_BASE}/autostart`);
+        const prefs = await res.json();
+        document.querySelectorAll('.autostart-cb').forEach(cb => { cb.checked = prefs[cb.dataset.service] === true; });
+        syncAutostartAll();
+    } catch (e) {}
+}
+
+async function saveAutostart(changes) {
+    try {
+        const res = await fetch(`${API_BASE}/autostart`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(changes)
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error();
+        showToast('Start-on-launch settings saved', false);
+    } catch (e) {
+        showToast('Could not save start-on-launch settings', true);
+        fetchAutostart();
+    }
+}
+
+document.querySelectorAll('.autostart-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+        syncAutostartAll();
+        saveAutostart({ [cb.dataset.service]: cb.checked });
+    });
+});
+const autostartAllBox = document.getElementById('autostart-all');
+if (autostartAllBox) {
+    autostartAllBox.addEventListener('change', () => {
+        const changes = {};
+        document.querySelectorAll('.autostart-cb').forEach(cb => { cb.checked = autostartAllBox.checked; changes[cb.dataset.service] = cb.checked; });
+        syncAutostartAll();
+        saveAutostart(changes);
+    });
+}
+fetchAutostart();
 
 document.getElementById('btn-stop-all').addEventListener('click', () => {
     const activeServices = ['caddy', 'php'];
@@ -1077,7 +1143,7 @@ async function fetchHosts() {
                 document.querySelectorAll('.master-item').forEach(el => el.classList.remove('selected'));
                 div.classList.add('selected');
                 selectedHostName = host.name;
-                showHostDetail(host.name, host.domain, host.path.replace(/\\/g, '\\\\'), host.meta ? host.meta.size : 0, host.meta && host.meta.stack ? host.meta.stack.join(',') : '', host.meta && host.meta.sqliteDbs ? host.meta.sqliteDbs : []);
+                showHostDetail(host.name, host.domain, host.path, host.meta ? host.meta.size : 0, host.meta && host.meta.stack ? host.meta.stack.join(',') : '', host.meta && host.meta.sqliteDbs ? host.meta.sqliteDbs : []);
             };
             list.appendChild(div);
 
@@ -1665,8 +1731,7 @@ async function openAdminerSqlite(dbPathEncoded) {
     showToast('Opening Adminer...', false);
     try {
         await fetch(`${API_BASE}/adminer/install`, { method: 'POST' });
-        const p = SYS_PORTS.caddy_http === 80 ? '' : `:${SYS_PORTS.caddy_http}`;
-        window.open(`http://adminer.jengadev${p}/?sqlite=&username=&db=${dbPathEncoded}`, '_blank');
+        window.open(`${toolUrl('adminer')}/?sqlite=&username=&db=${dbPathEncoded}`, '_blank');
     } catch(e) {
         showToast('Failed to install Adminer', true);
     }
